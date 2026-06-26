@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.zoomroom.poller</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/SG3966/Claude/zoom_room_monitor/deploy/poller-agent.sh</string>
+  </array>
+
+  <!-- Start at login and keep it alive: if the poller (or the wrapper) ever
+       exits, launchd respawns it. -->
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+
+  <!-- Don't hot-loop if it fails fast (e.g. Podman still booting). -->
+  <key>ThrottleInterval</key>
+  <integer>30</integer>
+
+  <!-- Wrapper + poller logs (separate from the poller's own bridge/logs/poll.log). -->
+  <key>StandardOutPath</key>
+  <string>/Users/SG3966/Claude/zoom_room_monitor/bridge/logs/agent.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/SG3966/Claude/zoom_room_monitor/bridge/logs/agent.err.log</string>
+
+  <!-- LaunchAgents get a minimal PATH; ensure native Homebrew (podman) is on it. -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+</dict>
+</plist>
