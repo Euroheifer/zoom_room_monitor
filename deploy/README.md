@@ -33,6 +33,19 @@ After `up`, enable the Zabbix app plugin and add the datasource:
 ```
 This is idempotent and points Grafana at the Zabbix API over the pod's localhost.
 
+## POC dashboard
+Import the Singapore fleet dashboard:
+```bash
+./import-dashboard.sh      # creates/updates /d/zoom-sg-poc
+```
+Open it at **http://localhost:3001/d/zoom-sg-poc**. Panels: headline stats
+(total / online / offline / in-meeting), offline-rooms-over-time, an active-issues
+problems list, and a 136-room status grid (red = offline).
+
+> Note: the Zabbix datasource caches its host/item list (`cacheTTL`). If newly
+> provisioned hosts/items don't appear in Grafana, restart Grafana
+> (`podman restart zabbix-poc-grafana`) or set the datasource cache to 0.
+
 ## Notes
 - Single Podman **pod**: all containers share `localhost`, so the bridge sends to
   `localhost:10051` and Grafana reaches Zabbix at `localhost:8080`.

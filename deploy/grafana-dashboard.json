@@ -1,0 +1,71 @@
+{
+  "overwrite": true,
+  "folderId": 0,
+  "dashboard": {
+    "uid": "zoom-sg-poc",
+    "title": "Zoom Rooms — Singapore (POC)",
+    "tags": ["zoom", "poc"],
+    "timezone": "browser",
+    "schemaVersion": 39,
+    "refresh": "30s",
+    "time": { "from": "now-6h", "to": "now" },
+    "templating": { "list": [] },
+    "panels": [
+      {
+        "id": 1, "type": "stat", "title": "Total Rooms",
+        "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+        "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
+        "targets": [ { "refId": "A", "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" }, "queryType": "0", "group": { "filter": "Rooms/Singapore" }, "host": { "filter": "SG Fleet Summary" }, "application": { "filter": "" }, "item": { "filter": "Fleet: total rooms" }, "functions": [], "options": {} } ],
+        "options": { "reduceOptions": { "calcs": ["lastNotNull"], "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "value" },
+        "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "blue" } }, "overrides": [] }
+      },
+      {
+        "id": 2, "type": "stat", "title": "Online",
+        "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+        "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
+        "targets": [ { "refId": "A", "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" }, "queryType": "0", "group": { "filter": "Rooms/Singapore" }, "host": { "filter": "SG Fleet Summary" }, "application": { "filter": "" }, "item": { "filter": "Fleet: rooms online" }, "functions": [], "options": {} } ],
+        "options": { "reduceOptions": { "calcs": ["lastNotNull"], "values": false }, "colorMode": "value", "graphMode": "area", "textMode": "value" },
+        "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "green" } }, "overrides": [] }
+      },
+      {
+        "id": 3, "type": "stat", "title": "Offline now",
+        "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+        "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
+        "targets": [ { "refId": "A", "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" }, "queryType": "0", "group": { "filter": "Rooms/Singapore" }, "host": { "filter": "SG Fleet Summary" }, "application": { "filter": "" }, "item": { "filter": "Fleet: rooms offline" }, "functions": [], "options": {} } ],
+        "options": { "reduceOptions": { "calcs": ["lastNotNull"], "values": false }, "colorMode": "background", "graphMode": "area", "textMode": "value" },
+        "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [ { "value": null, "color": "green" }, { "value": 1, "color": "red" } ] } }, "overrides": [] }
+      },
+      {
+        "id": 4, "type": "stat", "title": "In Meeting",
+        "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+        "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
+        "targets": [ { "refId": "A", "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" }, "queryType": "0", "group": { "filter": "Rooms/Singapore" }, "host": { "filter": "SG Fleet Summary" }, "application": { "filter": "" }, "item": { "filter": "Fleet: rooms in meeting" }, "functions": [], "options": {} } ],
+        "options": { "reduceOptions": { "calcs": ["lastNotNull"], "values": false }, "colorMode": "value", "graphMode": "area", "textMode": "value" },
+        "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "blue" } }, "overrides": [] }
+      },
+      {
+        "id": 5, "type": "timeseries", "title": "Offline rooms over time",
+        "gridPos": { "x": 0, "y": 4, "w": 12, "h": 9 },
+        "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
+        "targets": [ { "refId": "A", "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" }, "queryType": "0", "group": { "filter": "Rooms/Singapore" }, "host": { "filter": "SG Fleet Summary" }, "application": { "filter": "" }, "item": { "filter": "Fleet: rooms offline" }, "functions": [], "options": {} } ],
+        "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "red" }, "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "showPoints": "never" }, "unit": "short" }, "overrides": [] },
+        "options": { "legend": { "showLegend": false }, "tooltip": { "mode": "single" } }
+      },
+      {
+        "id": 6, "type": "alexanderzobnin-zabbix-triggers-panel", "title": "Active issues (SG)",
+        "gridPos": { "x": 12, "y": 4, "w": 12, "h": 9 },
+        "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
+        "targets": [ { "refId": "A", "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" }, "queryType": "5", "group": { "filter": "Rooms/Singapore" }, "host": { "filter": "/.*/" }, "application": { "filter": "" }, "trigger": { "filter": "" }, "options": { "minSeverity": 0, "sortProblems": "default", "acknowledged": 2 } } ],
+        "options": { "hostField": "hostname", "statusField": false, "severityField": true, "hostTechNameField": false, "showTags": true, "hostGroups": false, "sortProblemsField": "lastchange", "ackEventColor": false, "pageSize": 20, "fontSize": "100%", "highlightNewerThan": "1h" }
+      },
+      {
+        "id": 7, "type": "stat", "title": "Room status grid (red = offline)",
+        "gridPos": { "x": 0, "y": 13, "w": 24, "h": 11 },
+        "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
+        "targets": [ { "refId": "A", "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" }, "queryType": "0", "group": { "filter": "Rooms/Singapore" }, "host": { "filter": "/.*/" }, "application": { "filter": "" }, "item": { "filter": "Room online (1/0)" }, "functions": [], "options": {} } ],
+        "options": { "reduceOptions": { "calcs": ["lastNotNull"], "values": false }, "colorMode": "background", "graphMode": "none", "textMode": "name", "justifyMode": "auto", "wideLayout": true },
+        "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "displayName": "${__field.labels.host}", "mappings": [ { "type": "value", "options": { "0": { "text": "OFFLINE", "color": "red" }, "1": { "text": "OK", "color": "green" } } } ], "thresholds": { "mode": "absolute", "steps": [ { "value": null, "color": "red" }, { "value": 1, "color": "green" } ] } }, "overrides": [] }
+      }
+    ]
+  }
+}

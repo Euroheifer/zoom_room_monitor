@@ -29,11 +29,12 @@ fi
 
 curl -s -X POST "$GF/api/datasources" -H "Content-Type: application/json" -d "{
   \"name\":\"Zabbix\",
+  \"uid\":\"zabbix-poc\",
   \"type\":\"alexanderzobnin-zabbix-datasource\",
   \"access\":\"proxy\",
   \"url\":\"${ZBX_API_URL}\",
   \"isDefault\":true,
-  \"jsonData\":{\"username\":\"${ZBX_USER}\",\"authType\":\"userLogin\",\"trends\":true,\"trendsFrom\":\"7d\",\"trendsRange\":\"4d\",\"cacheTTL\":\"1h\"},
+  \"jsonData\":{\"username\":\"${ZBX_USER}\",\"authType\":\"userLogin\",\"trends\":true,\"trendsFrom\":\"7d\",\"trendsRange\":\"4d\",\"cacheTTL\":\"0\"},
   \"secureJsonData\":{\"password\":\"${ZBX_PASS}\"}
 }" >/dev/null
 
