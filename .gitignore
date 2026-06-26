@@ -5,3 +5,13 @@
 Thumbs.db
 .DS_Store
 *.swp
+
+# Secrets — never commit real Zoom credentials
+.env
+**/.env
+bridge/.env
+
+# Python
+.venv/
+__pycache__/
+*.pyc
