@@ -21,11 +21,21 @@ also **de-risks the real build** — every component here carries forward.
 ## 2. Scope
 
 ### In scope
-- **Issue types:** room **offline (1)** and **peripheral disconnected (2)**
-  only. Both derive from the Zoom **Device Management API** — the scope most
-  likely already granted to the existing app.
-- **Fleet:** 3–5 real **Singapore** rooms, in one region host group
-  (`Rooms/Singapore`).
+- **Issue types:** room **offline (1)** and **peripheral / device disconnected
+  (2)** only.
+  - Offline comes from the Zoom **`/rooms` list** `status` field — one API call
+    returns every room's status, so offline detection is cheap fleet-wide.
+  - Peripheral/device comes from **`/rooms/{id}/devices`** per-device `status`
+    (Zoom Rooms Computer + Controller) — one call *per room*, so it is limited to
+    a small subset to respect rate limits.
+- **Fleet:** the **full Singapore fleet (~136 rooms)** for offline/status
+  detection, in one region host group (`Rooms/Singapore`); **peripheral/device
+  detection on a subset (~5 rooms)**. (Scope decision 2026-06-26: expanded from
+  the original 3–5 rooms because fleet-wide offline detection is a single API
+  call and a real 136-room board is far more convincing for the pitch.)
+- Region/building/floor are derived from the **room naming convention**
+  (`SG-{building}-{floor}-{room} | {number}`), since the location-hierarchy API
+  scope is not granted (confirmed by the scope check).
 - **Bridge:** the real thin Python bridge, polling every 1–5 minutes. Run
   continuously for a few days before the demo to accumulate real history.
 - **Dashboard:** one Grafana dashboard — status grid + active-issue list,
@@ -78,16 +88,24 @@ counts as an issue lives in Zabbix configuration, not in code.
 
 ## 4. Data Model
 
-- Each Zoom Room → one Zabbix host, named consistently (e.g. `SG-L12-Boardroom`).
+- Each Zoom Room → one Zabbix host. Visible name = full room name (e.g.
+  `SG-5SPD-2F-Eric Bui | 6898`); technical name = the same, sanitized of
+  characters Zabbix disallows (e.g. `|`). Host tags `region`, `building`,
+  `floor` parsed from the name.
 - Region → one host group: `Rooms/Singapore`.
-- Per-room trapper items: online state; per-peripheral connection status
-  (camera / mic / speaker / display / controller); app & firmware version where
-  available.
+- **Templates** carry the items/triggers (linked to hosts, so we don't create
+  136 × N items by hand):
+  - **`Template Zoom Room`** (all SG hosts) — trapper items
+    `zoom.room.status` (text) and `zoom.room.online` (0/1, derived: Offline→0,
+    else 1); plus the offline trigger.
+  - **`Template Zoom Room Devices`** (subset only) — trapper items per device
+    role `zoom.device.computer.status`, `zoom.device.controller.status` (0/1),
+    plus app/firmware text items; plus the device-disconnected trigger.
 - Triggers:
-  - **Room offline** — High severity; fires after the room is unreachable for a
-    confirmation window (e.g. 2 consecutive polls).
-  - **Peripheral disconnected** — Average/High; fires when a tracked peripheral
-    reports disconnected.
+  - **Room offline** — High severity; fires when the last 2 polls are offline
+    (`min(/host/zoom.room.online,#2)=0`) to avoid flapping.
+  - **Device disconnected** — Average severity; fires when a tracked device’s
+    status is 0 (subset hosts only).
 
 ## 5. Build Order
 
