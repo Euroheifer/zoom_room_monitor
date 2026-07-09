@@ -2,70 +2,565 @@
   "overwrite": true,
   "folderId": 0,
   "dashboard": {
-    "uid": "zoom-sg-poc",
-    "title": "Zoom Rooms — Singapore (POC)",
-    "tags": ["zoom", "poc"],
-    "timezone": "browser",
-    "schemaVersion": 39,
-    "refresh": "30s",
-    "time": { "from": "now-6h", "to": "now" },
-    "templating": { "list": [] },
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": {
+            "type": "grafana",
+            "uid": "-- Grafana --"
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "id": null,
+    "liveNow": false,
     "panels": [
       {
-        "id": 1, "type": "stat", "title": "Total Rooms",
-        "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
-        "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
-        "targets": [ { "refId": "A", "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" }, "queryType": "0", "group": { "filter": "Rooms/Singapore" }, "host": { "filter": "SG Fleet Summary" }, "application": { "filter": "" }, "item": { "filter": "Fleet: total rooms" }, "functions": [], "options": {} } ],
-        "options": { "reduceOptions": { "calcs": ["lastNotNull"], "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "value" },
-        "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "blue" } }, "overrides": [] }
+        "datasource": {
+          "type": "alexanderzobnin-zabbix-datasource",
+          "uid": "zabbix-poc"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "fixedColor": "green",
+              "mode": "fixed"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 0,
+          "y": 0
+        },
+        "id": 2,
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "percentChangeColorMode": "standard",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "value",
+          "wideLayout": true
+        },
+        "pluginVersion": "13.0.2",
+        "targets": [
+          {
+            "application": {
+              "filter": ""
+            },
+            "datasource": {
+              "type": "alexanderzobnin-zabbix-datasource",
+              "uid": "zabbix-poc"
+            },
+            "functions": [],
+            "group": {
+              "filter": "Rooms/Singapore"
+            },
+            "host": {
+              "filter": "SG Fleet Summary"
+            },
+            "item": {
+              "filter": "Fleet: rooms online"
+            },
+            "options": {},
+            "queryType": "0",
+            "refId": "A"
+          }
+        ],
+        "title": "Online",
+        "type": "stat"
       },
       {
-        "id": 2, "type": "stat", "title": "Online",
-        "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
-        "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
-        "targets": [ { "refId": "A", "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" }, "queryType": "0", "group": { "filter": "Rooms/Singapore" }, "host": { "filter": "SG Fleet Summary" }, "application": { "filter": "" }, "item": { "filter": "Fleet: rooms online" }, "functions": [], "options": {} } ],
-        "options": { "reduceOptions": { "calcs": ["lastNotNull"], "values": false }, "colorMode": "value", "graphMode": "area", "textMode": "value" },
-        "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "green" } }, "overrides": [] }
+        "datasource": {
+          "type": "alexanderzobnin-zabbix-datasource",
+          "uid": "zabbix-poc"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "red",
+                  "value": 1
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 6,
+          "y": 0
+        },
+        "id": 3,
+        "options": {
+          "colorMode": "background",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "percentChangeColorMode": "standard",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "value",
+          "wideLayout": true
+        },
+        "pluginVersion": "13.0.2",
+        "targets": [
+          {
+            "application": {
+              "filter": ""
+            },
+            "datasource": {
+              "type": "alexanderzobnin-zabbix-datasource",
+              "uid": "zabbix-poc"
+            },
+            "functions": [],
+            "group": {
+              "filter": "Rooms/Singapore"
+            },
+            "host": {
+              "filter": "SG Fleet Summary"
+            },
+            "item": {
+              "filter": "Fleet: rooms offline"
+            },
+            "options": {},
+            "queryType": "0",
+            "refId": "A"
+          }
+        ],
+        "title": "Offline now",
+        "type": "stat"
       },
       {
-        "id": 3, "type": "stat", "title": "Offline now",
-        "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
-        "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
-        "targets": [ { "refId": "A", "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" }, "queryType": "0", "group": { "filter": "Rooms/Singapore" }, "host": { "filter": "SG Fleet Summary" }, "application": { "filter": "" }, "item": { "filter": "Fleet: rooms offline" }, "functions": [], "options": {} } ],
-        "options": { "reduceOptions": { "calcs": ["lastNotNull"], "values": false }, "colorMode": "background", "graphMode": "area", "textMode": "value" },
-        "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [ { "value": null, "color": "green" }, { "value": 1, "color": "red" } ] } }, "overrides": [] }
+        "datasource": {
+          "type": "alexanderzobnin-zabbix-datasource",
+          "uid": "zabbix-poc"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "fixedColor": "red",
+              "mode": "fixed"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "barWidthFactor": 0.6,
+              "drawStyle": "line",
+              "fillOpacity": 20,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "showValues": false,
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "short"
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        },
+        "id": 5,
+        "options": {
+          "annotations": {
+            "clustering": -1,
+            "multiLane": false
+          },
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": false
+          },
+          "tooltip": {
+            "hideZeros": false,
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "pluginVersion": "13.0.2",
+        "targets": [
+          {
+            "application": {
+              "filter": ""
+            },
+            "datasource": {
+              "type": "alexanderzobnin-zabbix-datasource",
+              "uid": "zabbix-poc"
+            },
+            "functions": [],
+            "group": {
+              "filter": "Rooms/Singapore"
+            },
+            "host": {
+              "filter": "SG Fleet Summary"
+            },
+            "item": {
+              "filter": "Fleet: rooms offline"
+            },
+            "options": {},
+            "queryType": "0",
+            "refId": "A"
+          }
+        ],
+        "title": "Offline rooms over time",
+        "type": "timeseries"
       },
       {
-        "id": 4, "type": "stat", "title": "In Meeting",
-        "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
-        "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
-        "targets": [ { "refId": "A", "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" }, "queryType": "0", "group": { "filter": "Rooms/Singapore" }, "host": { "filter": "SG Fleet Summary" }, "application": { "filter": "" }, "item": { "filter": "Fleet: rooms in meeting" }, "functions": [], "options": {} } ],
-        "options": { "reduceOptions": { "calcs": ["lastNotNull"], "values": false }, "colorMode": "value", "graphMode": "area", "textMode": "value" },
-        "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "blue" } }, "overrides": [] }
+        "datasource": {
+          "type": "alexanderzobnin-zabbix-datasource",
+          "uid": "zabbix-poc"
+        },
+        "gridPos": {
+          "h": 12,
+          "w": 24,
+          "x": 0,
+          "y": 4
+        },
+        "id": 6,
+        "options": {
+          "ackEventColor": false,
+          "ackField": true,
+          "ageField": false,
+          "allowDangerousHTML": false,
+          "customLastChangeFormat": false,
+          "customTagColumns": "",
+          "descriptionAtNewLine": false,
+          "descriptionField": true,
+          "fontSize": "100%",
+          "highlightBackground": false,
+          "highlightNewEvents": false,
+          "highlightNewerThan": "1h",
+          "hostField": "hostname",
+          "hostGroups": false,
+          "hostProxy": false,
+          "hostTechNameField": false,
+          "lastChangeFormat": "",
+          "layout": "table",
+          "markAckEvents": false,
+          "okEventColor": "rgb(56, 189, 113)",
+          "opdataField": false,
+          "pageSize": 10,
+          "problemTimeline": true,
+          "severityField": true,
+          "showDatasourceName": false,
+          "showTags": true,
+          "sortProblems": "lastchange",
+          "sortProblemsField": "lastchange",
+          "statusField": false,
+          "statusIcon": false,
+          "triggerSeverity": [
+            {
+              "color": "rgb(108, 108, 108)",
+              "priority": 0,
+              "severity": "Not classified",
+              "show": true
+            },
+            {
+              "color": "rgb(120, 158, 183)",
+              "priority": 1,
+              "severity": "Information",
+              "show": true
+            },
+            {
+              "color": "rgb(175, 180, 36)",
+              "priority": 2,
+              "severity": "Warning",
+              "show": true
+            },
+            {
+              "color": "rgb(255, 137, 30)",
+              "priority": 3,
+              "severity": "Average",
+              "show": true
+            },
+            {
+              "color": "rgb(255, 101, 72)",
+              "priority": 4,
+              "severity": "High",
+              "show": true
+            },
+            {
+              "color": "rgb(215, 0, 0)",
+              "priority": 5,
+              "severity": "Disaster",
+              "show": true
+            }
+          ]
+        },
+        "pluginVersion": "6.4.0",
+        "targets": [
+          {
+            "application": {
+              "filter": ""
+            },
+            "countTriggersBy": "",
+            "datasource": {
+              "type": "alexanderzobnin-zabbix-datasource",
+              "uid": "zabbix-poc"
+            },
+            "evaltype": "0",
+            "functions": [],
+            "group": {
+              "filter": "Rooms/Singapore"
+            },
+            "host": {
+              "filter": "/.*/"
+            },
+            "item": {
+              "filter": ""
+            },
+            "itemTag": {
+              "filter": ""
+            },
+            "macro": {
+              "filter": ""
+            },
+            "options": {
+              "acknowledged": 2,
+              "count": false,
+              "disableDataAlignment": false,
+              "hostProxy": false,
+              "hostsInMaintenance": false,
+              "limit": 1001,
+              "minSeverity": 0,
+              "showDisabledItems": false,
+              "skipEmptyValues": false,
+              "sortProblems": "default",
+              "useTimeRange": false,
+              "useTrends": "default",
+              "useZabbixValueMapping": false
+            },
+            "proxy": {
+              "filter": ""
+            },
+            "queryType": "5",
+            "refId": "A",
+            "resultFormat": "time_series",
+            "schema": 12,
+            "showProblems": "problems",
+            "table": {
+              "skipEmptyValues": false
+            },
+            "tags": {
+              "filter": ""
+            },
+            "textFilter": "",
+            "trigger": {
+              "filter": ""
+            }
+          }
+        ],
+        "title": "Active issues (SG)",
+        "type": "alexanderzobnin-zabbix-triggers-panel"
       },
       {
-        "id": 5, "type": "timeseries", "title": "Offline rooms over time",
-        "gridPos": { "x": 0, "y": 4, "w": 12, "h": 9 },
-        "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
-        "targets": [ { "refId": "A", "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" }, "queryType": "0", "group": { "filter": "Rooms/Singapore" }, "host": { "filter": "SG Fleet Summary" }, "application": { "filter": "" }, "item": { "filter": "Fleet: rooms offline" }, "functions": [], "options": {} } ],
-        "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "red" }, "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "showPoints": "never" }, "unit": "short" }, "overrides": [] },
-        "options": { "legend": { "showLegend": false }, "tooltip": { "mode": "single" } }
-      },
-      {
-        "id": 6, "type": "alexanderzobnin-zabbix-triggers-panel", "title": "Active issues (SG)",
-        "gridPos": { "x": 12, "y": 4, "w": 12, "h": 9 },
-        "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
-        "targets": [ { "refId": "A", "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" }, "queryType": "5", "group": { "filter": "Rooms/Singapore" }, "host": { "filter": "/.*/" }, "application": { "filter": "" }, "trigger": { "filter": "" }, "options": { "minSeverity": 0, "sortProblems": "default", "acknowledged": 2 } } ],
-        "options": { "hostField": "hostname", "statusField": false, "severityField": true, "hostTechNameField": false, "showTags": true, "hostGroups": false, "sortProblemsField": "lastchange", "ackEventColor": false, "pageSize": 20, "fontSize": "100%", "highlightNewerThan": "1h" }
-      },
-      {
-        "id": 7, "type": "stat", "title": "Room status grid (red = offline)",
-        "gridPos": { "x": 0, "y": 13, "w": 24, "h": 11 },
-        "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
-        "targets": [ { "refId": "A", "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" }, "queryType": "0", "group": { "filter": "Rooms/Singapore" }, "host": { "filter": "/.*/" }, "application": { "filter": "" }, "item": { "filter": "Room online (1/0)" }, "functions": [], "options": {} } ],
-        "options": { "reduceOptions": { "calcs": ["lastNotNull"], "values": false }, "colorMode": "background", "graphMode": "none", "textMode": "name", "justifyMode": "auto", "wideLayout": true },
-        "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "displayName": "${__field.labels.host}", "mappings": [ { "type": "value", "options": { "0": { "text": "OFFLINE", "color": "red" }, "1": { "text": "OK", "color": "green" } } } ], "thresholds": { "mode": "absolute", "steps": [ { "value": null, "color": "red" }, { "value": 1, "color": "green" } ] } }, "overrides": [] }
+        "datasource": {
+          "type": "alexanderzobnin-zabbix-datasource",
+          "uid": "zabbix-poc"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "displayName": "${__field.labels.host}",
+            "mappings": [
+              {
+                "options": {
+                  "0": {
+                    "color": "red",
+                    "text": "OFFLINE"
+                  },
+                  "1": {
+                    "color": "green",
+                    "text": "OK"
+                  }
+                },
+                "type": "value"
+              }
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "red",
+                  "value": 0
+                },
+                {
+                  "color": "green",
+                  "value": 1
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 11,
+          "w": 24,
+          "x": 0,
+          "y": 16
+        },
+        "id": 7,
+        "options": {
+          "colorMode": "background",
+          "graphMode": "none",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "percentChangeColorMode": "standard",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "name",
+          "wideLayout": true
+        },
+        "pluginVersion": "13.0.2",
+        "targets": [
+          {
+            "application": {
+              "filter": ""
+            },
+            "datasource": {
+              "type": "alexanderzobnin-zabbix-datasource",
+              "uid": "zabbix-poc"
+            },
+            "functions": [],
+            "group": {
+              "filter": "Rooms/Singapore"
+            },
+            "host": {
+              "filter": "/.*/"
+            },
+            "item": {
+              "filter": "Room online (1/0)"
+            },
+            "options": {},
+            "queryType": "0",
+            "refId": "A"
+          }
+        ],
+        "title": "Room status grid (red = offline)",
+        "type": "stat"
       }
-    ]
+    ],
+    "preload": false,
+    "refresh": "30s",
+    "schemaVersion": 42,
+    "tags": [
+      "zoom",
+      "poc"
+    ],
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ]
+    },
+    "timezone": "browser",
+    "title": "Zoom Rooms \u2014 Singapore (POC)",
+    "uid": "zoom-sg-poc"
   }
 }
