@@ -51,6 +51,20 @@ def room_to_values(room: dict) -> dict[str, object]:
     }
 
 
+def fleet_counts(rooms: list[dict]) -> dict[str, int]:
+    """Fleet-level rollup counts for the summary host / headline stats."""
+    from collections import Counter
+    c = Counter(r.get("status", "Unknown") for r in rooms)
+    total = len(rooms)
+    offline = c.get("Offline", 0)
+    return {
+        "zoom.fleet.total": total,
+        "zoom.fleet.offline": offline,
+        "zoom.fleet.online": total - offline,
+        "zoom.fleet.inmeeting": c.get("InMeeting", 0),
+    }
+
+
 def _device_online(status: str) -> int:
     return 1 if str(status).lower() == "online" else 0
 

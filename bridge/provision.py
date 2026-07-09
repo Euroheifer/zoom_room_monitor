@@ -24,6 +24,9 @@ SUBSET_SIZE = int(os.environ.get("PERIPHERAL_SUBSET_SIZE", "5"))
 
 ROOM_TEMPLATE = "Template Zoom Room"
 DEV_TEMPLATE = "Template Zoom Room Devices"
+FLEET_TEMPLATE = "Template Zoom Fleet"
+FLEET_HOST_TECH = "SG-Fleet-Summary"
+FLEET_HOST_NAME = "SG Fleet Summary"
 
 # Zabbix value types
 T_UNSIGNED, T_TEXT = 3, 4
@@ -91,6 +94,32 @@ def build_room_template(api, tg_id):
         SEV_HIGH,
     )
     return tid
+
+
+def build_fleet_template(api, tg_id):
+    tid = get_or_create_template(api, FLEET_TEMPLATE, tg_id)
+    ensure_items(api, tid, [
+        ("zoom.fleet.total", "Fleet: total rooms", T_UNSIGNED),
+        ("zoom.fleet.online", "Fleet: rooms online", T_UNSIGNED),
+        ("zoom.fleet.offline", "Fleet: rooms offline", T_UNSIGNED),
+        ("zoom.fleet.inmeeting", "Fleet: rooms in meeting", T_UNSIGNED),
+    ])
+    return tid
+
+
+def ensure_fleet_host(api, hg_id, fleet_tpl):
+    existing = api.call("host.get", {"filter": {"host": [FLEET_HOST_TECH]}, "output": ["hostid"]})
+    if existing:
+        api.call("host.update", {"hostid": existing[0]["hostid"],
+                                 "templates": [{"templateid": fleet_tpl}]})
+        return
+    api.call("host.create", {
+        "host": FLEET_HOST_TECH,
+        "name": FLEET_HOST_NAME,
+        "groups": [{"groupid": hg_id}],
+        "templates": [{"templateid": fleet_tpl}],
+        "tags": [{"tag": "region", "value": REGION_PREFIX}, {"tag": "role", "value": "summary"}],
+    })
 
 
 def build_device_template(api, tg_id):
@@ -169,7 +198,9 @@ def main():
     tg_id = get_or_create_templategroup(api, "Templates/Zoom")
     room_tpl = build_room_template(api, tg_id)
     dev_tpl = build_device_template(api, tg_id)
-    print(f">> templates ready (room={room_tpl}, devices={dev_tpl})")
+    fleet_tpl = build_fleet_template(api, tg_id)
+    ensure_fleet_host(api, hg_id, fleet_tpl)
+    print(f">> templates ready (room={room_tpl}, devices={dev_tpl}, fleet={fleet_tpl})")
 
     client = ZoomClient()
     rooms = fetch_region_rooms(client)

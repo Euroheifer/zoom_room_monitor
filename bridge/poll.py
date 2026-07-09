@@ -16,7 +16,9 @@ import time
 
 from zoom_client import ZoomClient
 from zabbix_client import send_values
-from mapper import sanitize_host_name, room_to_values, devices_to_values
+from mapper import sanitize_host_name, room_to_values, devices_to_values, fleet_counts
+
+FLEET_HOST = "SG-Fleet-Summary"
 
 REGION_PREFIX = os.environ.get("REGION_PREFIX", "SG")
 SUBSET_SIZE = int(os.environ.get("PERIPHERAL_SUBSET_SIZE", "5"))
@@ -62,6 +64,10 @@ def cycle(client) -> dict:
         devices = resp.json().get("devices", [])
         for key, value in devices_to_values(devices).items():
             batch.append({"host": host, "key": key, "value": str(value)})
+
+    # fleet-level rollup -> summary host (headline stats + history)
+    for key, value in fleet_counts(rooms).items():
+        batch.append({"host": FLEET_HOST, "key": key, "value": str(value)})
 
     result = send_values(batch)
     offline = sum(1 for r in rooms if r.get("status") == "Offline")

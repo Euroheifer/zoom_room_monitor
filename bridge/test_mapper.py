@@ -5,6 +5,7 @@ from mapper import (
     room_online,
     room_to_values,
     devices_to_values,
+    fleet_counts,
 )
 
 
@@ -49,6 +50,21 @@ def test_devices_to_values_partial_failure():
     assert vals["zoom.device.controller.status"] == 1
     assert vals["zoom.device.computer.version"] == "7.0.0 (7486)"
     assert vals["zoom.device.controller.version"] == "2.0.86"
+
+
+def test_fleet_counts():
+    rooms = [
+        {"status": "Available"}, {"status": "Available"},
+        {"status": "InMeeting"}, {"status": "Offline"},
+        {"status": "UnderConstruction"},
+    ]
+    c = fleet_counts(rooms)
+    assert c == {
+        "zoom.fleet.total": 5,
+        "zoom.fleet.offline": 1,
+        "zoom.fleet.online": 4,
+        "zoom.fleet.inmeeting": 1,
+    }
 
 
 def test_devices_to_values_healthy():
