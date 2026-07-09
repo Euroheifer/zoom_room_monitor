@@ -9,7 +9,9 @@
 set -euo pipefail
 
 GF_PORT="${GF_PORT:-3001}"
-GF="http://admin:admin@localhost:${GF_PORT}"
+GF_ADMIN_USER="${GF_ADMIN_USER:-admin}"
+GF_ADMIN_PASS="${GF_ADMIN_PASS:-admin}"   # Grafana forces a change on first login — pass the real one via env
+GF="http://${GF_ADMIN_USER}:${GF_ADMIN_PASS}@localhost:${GF_PORT}"
 ZBX_API_URL="http://localhost:8080/api_jsonrpc.php"
 ZBX_USER="${ZBX_USER:-Admin}"
 ZBX_PASS="${ZBX_PASS:-zabbix}"
@@ -34,7 +36,7 @@ curl -s -X POST "$GF/api/datasources" -H "Content-Type: application/json" -d "{
   \"access\":\"proxy\",
   \"url\":\"${ZBX_API_URL}\",
   \"isDefault\":true,
-  \"jsonData\":{\"username\":\"${ZBX_USER}\",\"authType\":\"userLogin\",\"trends\":true,\"trendsFrom\":\"7d\",\"trendsRange\":\"4d\",\"cacheTTL\":\"0\"},
+  \"jsonData\":{\"username\":\"${ZBX_USER}\",\"authType\":\"userLogin\",\"trends\":true,\"trendsFrom\":\"7d\",\"trendsRange\":\"4d\",\"cacheTTL\":\"1m\"},
   \"secureJsonData\":{\"password\":\"${ZBX_PASS}\"}
 }" >/dev/null
 
