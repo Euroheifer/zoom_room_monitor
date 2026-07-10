@@ -38,7 +38,8 @@ On **real data, today** — not a mockup:
 - ✅ **136 real Singapore rooms** monitored as first-class hosts, tagged by region / building / floor.
 - ✅ **Fleet-wide offline detection** with anti-flap (a room must miss **two** polls before it's flagged).
 - ✅ **Device-disconnect detection** (room computer / controller) — catches *partial* failures, e.g. the PC is offline while the controller is still up.
-- ✅ **A live Grafana dashboard** — headline stats, offline-over-time history, an active-issues list, and a 136-tile status grid.
+- ✅ **Fleet-level rollup** — every poll cycle pushes online / offline / in-meeting totals to a dedicated summary host, so headline stats have real history, not per-panel math.
+- ✅ **A live Grafana dashboard** — online/offline headline stats, offline-over-time history, an active-issues list, and a 136-tile status grid.
 - ✅ Built on **production-grade open source** (Zabbix + Grafana) — the demo stack *is* the real architecture, just smaller.
 
 ## Architecture
@@ -66,9 +67,9 @@ flowchart LR
 Once the stack is up and the poller has run, open the dashboard at
 **`http://localhost:3001/d/zoom-sg-poc`**. It shows:
 
-- **Headline stats** — total / online / offline / in-meeting at a glance.
-- **Offline rooms over time** — trend history (run the poller for a few days before a demo to populate it).
-- **Active issues** — every currently-firing offline / device trigger.
+- **Online / Offline now** — the two numbers that matter, at a glance.
+- **Offline rooms over time** — trend history, top right (run the poller for a few days before a demo to populate it).
+- **Active issues** — every currently-firing offline / device trigger, tagged by building and floor.
 - **136-tile status grid** — the whole fleet on one screen; red = offline.
 
 <!-- 📸 Optional: add a close-up of the status grid as docs/images/status-grid.png -->
@@ -93,6 +94,12 @@ cd ../bridge && cp .env.example .env   # fill in ACCOUNT_ID / CLIENT_ID / CLIENT
 # 4. Import the dashboard
 cd ../deploy && ./import-dashboard.sh  # -> http://localhost:3001/d/zoom-sg-poc
 ```
+
+> **Grafana password gotcha:** Grafana forces you to change the admin password on
+> your first UI login. After that, `admin:admin` stops working — pass your real
+> password to the deploy scripts via env var:
+> `GF_ADMIN_PASS=<your password> ./import-dashboard.sh` (same for
+> `configure-grafana.sh`). The import fails loudly if credentials are wrong.
 
 A healthy poll cycle prints:
 
@@ -137,7 +144,7 @@ Each deferred item is a step on the **same architecture** — see the design spe
 ## Security
 
 - Credentials live only in a **gitignored** `bridge/.env` — never committed. `.env.example` holds placeholders only.
-- The POC uses simple Zabbix / Grafana passwords; change them for any shared or long-lived deployment.
+- The POC uses simple Zabbix / Grafana passwords; change them for any shared or long-lived deployment. (Grafana already forces a new admin password on first login — see the quick-start note.)
 - Rotate the Zoom client secret if it is ever exposed.
 
 ---
