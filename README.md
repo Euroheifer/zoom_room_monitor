@@ -13,11 +13,7 @@ It's a faithful miniature of the approved production architecture — running to
 ![Podman](https://img.shields.io/badge/Podman-pod-892CA0?logo=podman&logoColor=white)
 ![Status](https://img.shields.io/badge/status-POC_working_end--to--end-success)
 
-<!-- 📸 SCREENSHOT: capture http://localhost:3001/d/zoom-sg-poc, save it as
-     docs/images/dashboard.png, and replace the placeholder URL below with:
-     ![Grafana dashboard ...](docs/images/dashboard.png) -->
-![Grafana dashboard — fleet status grid, offline-over-time, and headline stats](https://placehold.co/1000x420/1f2937/f97316/png?text=Grafana+Dashboard+Screenshot+Here)
-> _Placeholder — swap for a real capture of `http://localhost:3001/d/zoom-sg-poc`._
+![Grafana dashboard — online/offline headline stats, offline-over-time, active issues, and the 136-tile fleet status grid](docs/images/dashboard.png)
 
 ---
 
