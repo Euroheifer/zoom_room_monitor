@@ -293,115 +293,49 @@
         "type": "timeseries"
       },
       {
-        "datasource": {
-          "type": "alexanderzobnin-zabbix-datasource",
-          "uid": "zabbix-poc"
-        },
-        "gridPos": {
-          "h": 12,
-          "w": 24,
-          "x": 0,
-          "y": 4
-        },
+        "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
+        "gridPos": { "h": 12, "w": 24, "x": 0, "y": 4 },
         "id": 6,
-        "options": {
-          "ackEventColor": false,
-          "ackField": true,
-          "ageField": false,
-          "allowDangerousHTML": false,
-          "customLastChangeFormat": false,
-          "customTagColumns": "",
-          "descriptionAtNewLine": false,
-          "descriptionField": true,
-          "fontSize": "100%",
-          "highlightBackground": false,
-          "highlightNewEvents": false,
-          "highlightNewerThan": "1h",
-          "hostField": "hostname",
-          "hostGroups": false,
-          "hostProxy": false,
-          "hostTechNameField": false,
-          "lastChangeFormat": "",
-          "layout": "table",
-          "markAckEvents": false,
-          "okEventColor": "rgb(56, 189, 113)",
-          "opdataField": false,
-          "pageSize": 10,
-          "problemTimeline": true,
-          "severityField": true,
-          "showDatasourceName": false,
-          "showTags": true,
-          "sortProblems": "lastchange",
-          "sortProblemsField": "lastchange",
-          "statusField": false,
-          "statusIcon": false,
-          "triggerSeverity": [
-            {
-              "color": "rgb(108, 108, 108)",
-              "priority": 0,
-              "severity": "Not classified",
-              "show": true
-            },
-            {
-              "color": "rgb(120, 158, 183)",
-              "priority": 1,
-              "severity": "Information",
-              "show": true
-            },
-            {
-              "color": "rgb(175, 180, 36)",
-              "priority": 2,
-              "severity": "Warning",
-              "show": true
-            },
-            {
-              "color": "rgb(255, 137, 30)",
-              "priority": 3,
-              "severity": "Average",
-              "show": true
-            },
-            {
-              "color": "rgb(255, 101, 72)",
-              "priority": 4,
-              "severity": "High",
-              "show": true
-            },
-            {
-              "color": "rgb(215, 0, 0)",
-              "priority": 5,
-              "severity": "Disaster",
-              "show": true
-            }
-          ]
+        "title": "Active issues (SG) — click a row for 30-day room history",
+        "type": "table",
+        "fieldConfig": {
+          "defaults": {
+            "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "filterable": false },
+            "links": [
+              {
+                "title": "Room history (30d)",
+                "url": "/d/zoom-room-detail?var-room=${__data.fields.Host:percentencode}&from=now-30d&to=now"
+              }
+            ]
+          },
+          "overrides": []
         },
-        "pluginVersion": "6.4.0",
+        "options": {
+          "cellHeight": "sm",
+          "footer": { "show": false },
+          "showHeader": true,
+          "sortBy": [{ "displayName": "Time", "desc": true }]
+        },
         "targets": [
           {
-            "application": {
-              "filter": ""
-            },
-            "countTriggersBy": "",
-            "datasource": {
-              "type": "alexanderzobnin-zabbix-datasource",
-              "uid": "zabbix-poc"
-            },
-            "evaltype": "0",
+            "refId": "A",
+            "queryType": "5",
+            "schema": 12,
+            "showProblems": "problems",
+            "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
             "functions": [],
-            "group": {
-              "filter": "Rooms/Singapore"
-            },
-            "host": {
-              "filter": "/.*/"
-            },
-            "item": {
-              "filter": ""
-            },
-            "itemTag": {
-              "filter": ""
-            },
-            "macro": {
-              "filter": ""
-            },
+            "evaltype": "0",
+            "application": { "filter": "" },
+            "group": { "filter": "Rooms/Singapore" },
+            "host": { "filter": "/.*/" },
+            "item": { "filter": "" },
+            "itemTag": { "filter": "" },
+            "macro": { "filter": "" },
+            "proxy": { "filter": "" },
+            "tags": { "filter": "" },
+            "trigger": { "filter": "" },
+            "textFilter": "",
+            "countTriggersBy": "",
             "options": {
               "acknowledged": 2,
               "count": false,
@@ -417,28 +351,10 @@
               "useTrends": "default",
               "useZabbixValueMapping": false
             },
-            "proxy": {
-              "filter": ""
-            },
-            "queryType": "5",
-            "refId": "A",
-            "resultFormat": "time_series",
-            "schema": 12,
-            "showProblems": "problems",
-            "table": {
-              "skipEmptyValues": false
-            },
-            "tags": {
-              "filter": ""
-            },
-            "textFilter": "",
-            "trigger": {
-              "filter": ""
-            }
+            "resultFormat": "table",
+            "table": { "skipEmptyValues": false }
           }
-        ],
-        "title": "Active issues (SG)",
-        "type": "alexanderzobnin-zabbix-triggers-panel"
+        ]
       },
       {
         "datasource": {
@@ -478,7 +394,13 @@
                   "value": 1
                 }
               ]
-            }
+            },
+            "links": [
+              {
+                "title": "Room history (30d)",
+                "url": "/d/zoom-room-detail?var-room=${__field.labels.host:percentencode}&from=now-30d&to=now"
+              }
+            ]
           }
         },
         "gridPos": {
