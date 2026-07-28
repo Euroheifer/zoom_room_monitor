@@ -5,12 +5,13 @@ cd "$(dirname "$0")"
 GF_PORT="${GF_PORT:-3001}"
 GF_ADMIN_USER="${GF_ADMIN_USER:-admin}"
 GF_ADMIN_PASS="${GF_ADMIN_PASS:-admin}"   # Grafana forces a change on first login — pass the real one via env
-GF="http://${GF_ADMIN_USER}:${GF_ADMIN_PASS}@localhost:${GF_PORT}"
+GF="http://localhost:${GF_PORT}"
 
 DASHBOARDS=(grafana-dashboard.json)
 
 for f in "${DASHBOARDS[@]}"; do
   curl -s -X POST "$GF/api/dashboards/db" \
+    -u "${GF_ADMIN_USER}:${GF_ADMIN_PASS}" \
     -H "Content-Type: application/json" \
     -d @"$f" \
     | python3 -c "
