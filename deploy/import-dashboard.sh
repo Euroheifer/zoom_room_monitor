@@ -7,7 +7,7 @@ GF_ADMIN_USER="${GF_ADMIN_USER:-admin}"
 GF_ADMIN_PASS="${GF_ADMIN_PASS:-admin}"   # Grafana forces a change on first login — pass the real one via env
 GF="http://localhost:${GF_PORT}"
 
-DASHBOARDS=(grafana-dashboard.json)
+DASHBOARDS=(grafana-dashboard.json grafana-room-detail.json)
 
 for f in "${DASHBOARDS[@]}"; do
   curl -s -X POST "$GF/api/dashboards/db" \

@@ -1,0 +1,264 @@
+{
+  "overwrite": true,
+  "folderId": 0,
+  "dashboard": {
+    "editable": true,
+    "id": null,
+    "uid": "zoom-room-detail",
+    "title": "Zoom Room — Detail",
+    "tags": ["zoom", "poc"],
+    "schemaVersion": 42,
+    "refresh": "1m",
+    "timezone": "browser",
+    "time": { "from": "now-30d", "to": "now" },
+    "templating": {
+      "list": [
+        {
+          "name": "room",
+          "label": "Room",
+          "type": "query",
+          "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
+          "query": {
+            "queryType": 1,
+            "group": { "filter": "Rooms/Singapore" },
+            "host": { "filter": "/.*/" },
+            "application": { "filter": "" },
+            "item": { "filter": "" }
+          },
+          "refresh": 1,
+          "sort": 1,
+          "includeAll": false,
+          "multi": false,
+          "current": {}
+        }
+      ]
+    },
+    "panels": [
+      {
+        "type": "state-timeline",
+        "title": "Online / offline",
+        "id": 1,
+        "gridPos": { "h": 6, "w": 18, "x": 0, "y": 0 },
+        "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
+        "fieldConfig": {
+          "defaults": {
+            "custom": { "fillOpacity": 70, "lineWidth": 0, "spanNulls": false },
+            "mappings": [
+              {
+                "type": "value",
+                "options": {
+                  "0": { "color": "red", "text": "OFFLINE" },
+                  "1": { "color": "green", "text": "ONLINE" }
+                }
+              }
+            ],
+            "displayName": "room"
+          }
+        },
+        "options": { "showValue": "never", "legend": { "showLegend": false }, "tooltip": { "mode": "single" } },
+        "targets": [
+          {
+            "refId": "A",
+            "queryType": "0",
+            "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
+            "functions": [],
+            "options": {},
+            "application": { "filter": "" },
+            "group": { "filter": "Rooms/Singapore" },
+            "host": { "filter": "$room" },
+            "item": { "filter": "Room online (1/0)" }
+          }
+        ]
+      },
+      {
+        "type": "stat",
+        "title": "Uptime (selected range)",
+        "id": 2,
+        "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 },
+        "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "decimals": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "yellow", "value": 0.95 },
+                { "color": "green", "value": 0.99 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "colorMode": "value",
+          "graphMode": "none",
+          "reduceOptions": { "calcs": ["mean"], "fields": "", "values": false },
+          "textMode": "value"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "queryType": "0",
+            "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
+            "functions": [],
+            "options": {},
+            "application": { "filter": "" },
+            "group": { "filter": "Rooms/Singapore" },
+            "host": { "filter": "$room" },
+            "item": { "filter": "Room online (1/0)" }
+          }
+        ]
+      },
+      {
+        "type": "alexanderzobnin-zabbix-triggers-panel",
+        "title": "Outages & issues (selected range)",
+        "id": 3,
+        "gridPos": { "h": 9, "w": 24, "x": 0, "y": 6 },
+        "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
+        "options": {
+          "layout": "table",
+          "hostField": "hostname",
+          "severityField": true,
+          "statusField": true,
+          "ackField": false,
+          "ageField": true,
+          "descriptionField": true,
+          "showTags": false,
+          "problemTimeline": true,
+          "sortProblems": "lastchange",
+          "sortProblemsField": "lastchange",
+          "fontSize": "100%",
+          "pageSize": 15,
+          "okEventColor": "rgb(56, 189, 113)",
+          "highlightBackground": false,
+          "highlightNewEvents": false,
+          "highlightNewerThan": "1h",
+          "customLastChangeFormat": false,
+          "lastChangeFormat": "",
+          "customTagColumns": "",
+          "allowDangerousHTML": false,
+          "descriptionAtNewLine": false,
+          "hostGroups": false,
+          "hostProxy": false,
+          "hostTechNameField": false,
+          "markAckEvents": false,
+          "opdataField": false,
+          "showDatasourceName": false,
+          "statusIcon": false,
+          "ackEventColor": false,
+          "triggerSeverity": [
+            { "priority": 0, "severity": "Not classified", "color": "rgb(108, 108, 108)", "show": true },
+            { "priority": 1, "severity": "Information", "color": "rgb(120, 158, 183)", "show": true },
+            { "priority": 2, "severity": "Warning", "color": "rgb(175, 180, 36)", "show": true },
+            { "priority": 3, "severity": "Average", "color": "rgb(255, 137, 30)", "show": true },
+            { "priority": 4, "severity": "High", "color": "rgb(255, 101, 72)", "show": true },
+            { "priority": 5, "severity": "Disaster", "color": "rgb(215, 0, 0)", "show": true }
+          ]
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "queryType": "5",
+            "schema": 12,
+            "showProblems": "history",
+            "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
+            "functions": [],
+            "evaltype": "0",
+            "application": { "filter": "" },
+            "group": { "filter": "Rooms/Singapore" },
+            "host": { "filter": "$room" },
+            "item": { "filter": "" },
+            "itemTag": { "filter": "" },
+            "macro": { "filter": "" },
+            "proxy": { "filter": "" },
+            "tags": { "filter": "" },
+            "trigger": { "filter": "" },
+            "textFilter": "",
+            "countTriggersBy": "",
+            "options": {
+              "acknowledged": 2,
+              "count": false,
+              "disableDataAlignment": false,
+              "hostProxy": false,
+              "hostsInMaintenance": false,
+              "limit": 1001,
+              "minSeverity": 0,
+              "showDisabledItems": false,
+              "skipEmptyValues": false,
+              "sortProblems": "default",
+              "useTimeRange": true,
+              "useTrends": "default",
+              "useZabbixValueMapping": false
+            },
+            "resultFormat": "time_series",
+            "table": { "skipEmptyValues": false }
+          }
+        ]
+      },
+      {
+        "type": "state-timeline",
+        "title": "Devices — computer / controller",
+        "description": "Device status is only collected while this room is in the poller's 5-room detail subset (offline rooms are picked first). Gaps mean the room was not in the subset, not that the devices were down.",
+        "id": 4,
+        "gridPos": { "h": 6, "w": 18, "x": 0, "y": 15 },
+        "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
+        "fieldConfig": {
+          "defaults": {
+            "custom": { "fillOpacity": 70, "lineWidth": 0, "spanNulls": false },
+            "mappings": [
+              {
+                "type": "value",
+                "options": {
+                  "0": { "color": "red", "text": "OFFLINE" },
+                  "1": { "color": "green", "text": "ONLINE" }
+                }
+              }
+            ]
+          }
+        },
+        "options": { "showValue": "never", "legend": { "showLegend": true }, "tooltip": { "mode": "single" } },
+        "targets": [
+          {
+            "refId": "A",
+            "queryType": "0",
+            "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
+            "functions": [],
+            "options": {},
+            "application": { "filter": "" },
+            "group": { "filter": "Rooms/Singapore" },
+            "host": { "filter": "$room" },
+            "item": { "filter": "/(Computer|Controller) online/" }
+          }
+        ]
+      },
+      {
+        "type": "stat",
+        "title": "Now: status / versions",
+        "id": 5,
+        "gridPos": { "h": 6, "w": 6, "x": 18, "y": 15 },
+        "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
+        "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "text" } } },
+        "options": {
+          "colorMode": "none",
+          "graphMode": "none",
+          "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/.*/", "values": false },
+          "textMode": "name_and_value"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "queryType": "0",
+            "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
+            "functions": [],
+            "options": {},
+            "application": { "filter": "" },
+            "group": { "filter": "Rooms/Singapore" },
+            "host": { "filter": "$room" },
+            "item": { "filter": "/(Room status \\(raw\\)|app version|Controller version)/" }
+          }
+        ]
+      }
+    ]
+  }
+}
