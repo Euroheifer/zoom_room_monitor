@@ -3,10 +3,10 @@
 Creates:
   * host group     Rooms/Singapore
   * template group Templates/Zoom
-  * template       "Template Zoom Room"          (all SG hosts)  -> status/online + offline trigger
-  * template       "Template Zoom Room Devices"  (subset)        -> device status + disconnect triggers
-  * one host per SG room, linked to the room template (+ devices template for the subset),
-    tagged region/building/floor.
+  * template       "Template Zoom Room"          -> status/online + offline trigger
+  * template       "Template Zoom Room Devices"  -> device status + disconnect triggers
+  * one host per SG room, linked to both templates (the poller's device subset is
+    dynamic, so every host must accept device items), tagged region/building/floor.
 
 Run:  ./run_provision.sh         (loads .env, runs in the venv)
 """
@@ -20,7 +20,6 @@ from zabbix_client import ZabbixAPI
 from mapper import sanitize_host_name, parse_tags
 
 REGION_PREFIX = os.environ.get("REGION_PREFIX", "SG")
-SUBSET_SIZE = int(os.environ.get("PERIPHERAL_SUBSET_SIZE", "5"))
 
 ROOM_TEMPLATE = "Template Zoom Room"
 DEV_TEMPLATE = "Template Zoom Room Devices"
@@ -153,16 +152,9 @@ def fetch_region_rooms(client):
     return [x for x in rooms if x.get("name", "").upper().startswith(REGION_PREFIX.upper())]
 
 
-def choose_subset(rooms, size):
-    """Pick the peripheral-detail subset, biased to include offline rooms so the
-    device trigger has live material to show."""
-    offline = [r for r in rooms if r.get("status") == "Offline"]
-    others = [r for r in rooms if r.get("status") != "Offline"]
-    ordered = sorted(offline, key=lambda r: r["name"]) + sorted(others, key=lambda r: r["name"])
-    return ordered[:size]
-
-
-def ensure_hosts(api, rooms, subset_ids, hg_id, room_tpl, dev_tpl):
+def ensure_hosts(api, rooms, hg_id, room_tpl, dev_tpl):
+    # Every host gets both templates: the poller's device subset is dynamic
+    # (offline rooms first), so any room may receive device items on any cycle.
     existing = {h["host"]: h["hostid"]
                 for h in api.call("host.get", {"groupids": hg_id, "output": ["host"]})}
     created = linked = 0
@@ -170,9 +162,7 @@ def ensure_hosts(api, rooms, subset_ids, hg_id, room_tpl, dev_tpl):
         name = room["name"]
         tech = sanitize_host_name(name)
         tags = [{"tag": k, "value": v} for k, v in parse_tags(name).items()]
-        templates = [{"templateid": room_tpl}]
-        if room["id"] in subset_ids:
-            templates.append({"templateid": dev_tpl})
+        templates = [{"templateid": room_tpl}, {"templateid": dev_tpl}]
         if tech in existing:
             # keep idempotent: make sure template links are present
             api.call("host.update", {"hostid": existing[tech], "templates": templates})
@@ -206,11 +196,7 @@ def main():
     rooms = fetch_region_rooms(client)
     print(f">> {len(rooms)} {REGION_PREFIX} rooms from Zoom")
 
-    subset = choose_subset(rooms, SUBSET_SIZE)
-    subset_ids = {r["id"] for r in subset}
-    print(f">> peripheral subset ({len(subset)}): " + ", ".join(r["name"] for r in subset))
-
-    created, linked = ensure_hosts(api, rooms, subset_ids, hg_id, room_tpl, dev_tpl)
+    created, linked = ensure_hosts(api, rooms, hg_id, room_tpl, dev_tpl)
     print(f">> hosts: {created} created, {linked} already existed (templates re-linked)")
     print("Done.")
 

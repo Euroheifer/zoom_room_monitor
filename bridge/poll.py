@@ -13,6 +13,11 @@ import argparse
 import os
 import sys
 import time
+from datetime import datetime
+
+
+def _now() -> str:
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 from zoom_client import ZoomClient
 from zabbix_client import send_values
@@ -84,10 +89,10 @@ def main():
     while True:
         try:
             r = cycle(client)
-            print(f"[poll] rooms={r['rooms']} offline={r['offline']} "
+            print(f"[poll {_now()}] rooms={r['rooms']} offline={r['offline']} "
                   f"subset={r['subset']} items={r['items']} -> {r['server']}", flush=True)
         except Exception as e:  # keep the loop alive on transient errors
-            print(f"[poll] ERROR: {e}", file=sys.stderr, flush=True)
+            print(f"[poll {_now()}] ERROR: {e}", file=sys.stderr, flush=True)
         if not args.loop:
             break
         time.sleep(POLL_INTERVAL)
