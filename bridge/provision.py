@@ -74,12 +74,23 @@ def ensure_items(api, template_id, specs, history="90d"):
             api.call("item.update", {"itemid": cur["itemid"], "history": history})
 
 
-def ensure_trigger(api, description, expression, priority):
-    existing = api.call("trigger.get", {"filter": {"description": description}})
-    if existing:
+def ensure_trigger(api, description, expression, priority, manual_close=0):
+    """Create the template trigger, or bring an existing one's expression /
+    manual_close in line (idempotent, like ensure_items)."""
+    existing = api.call("trigger.get", {"filter": {"description": description},
+                                        "templated": True,  # the template's own trigger, not host-inherited copies
+                                        "output": ["triggerid", "expression", "manual_close"],
+                                        "expandExpression": True})
+    if not existing:
+        api.call("trigger.create",
+                 {"description": description, "expression": expression,
+                  "priority": priority, "manual_close": manual_close})
         return
-    api.call("trigger.create",
-             {"description": description, "expression": expression, "priority": priority})
+    cur = existing[0]
+    if cur["expression"] != expression or int(cur.get("manual_close", 0)) != manual_close:
+        api.call("trigger.update", {"triggerid": cur["triggerid"],
+                                    "expression": expression,
+                                    "manual_close": manual_close})
 
 
 def ensure_trigger_dependency(api, template_id, description, dep_template_id, dep_description):
@@ -150,10 +161,19 @@ def build_device_template(api, tg_id):
         ("zoom.device.computer.version", "Computer app version", T_TEXT),
         ("zoom.device.controller.version", "Controller version", T_TEXT),
     ])
-    ensure_trigger(api, "Computer disconnected on {HOST.NAME}",
-                   f"last(/{DEV_TEMPLATE}/zoom.device.computer.status)=0", SEV_AVERAGE)
-    ensure_trigger(api, "Controller disconnected on {HOST.NAME}",
-                   f"last(/{DEV_TEMPLATE}/zoom.device.controller.status)=0", SEV_AVERAGE)
+    # nodata() guard: device values only refresh while a room is in the poller's
+    # detail subset, so a bare last()=0 keeps firing on stale data long after a
+    # room recovers. With the guard the alert self-clears once data goes stale.
+    # manual_close lets stale problems be closed by hand / API.
+    for role in ("computer", "controller"):
+        key = f"zoom.device.{role}.status"
+        ensure_trigger(
+            api,
+            f"{role.capitalize()} disconnected on {{HOST.NAME}}",
+            f"last(/{DEV_TEMPLATE}/{key})=0 and nodata(/{DEV_TEMPLATE}/{key},30m)=0",
+            SEV_AVERAGE,
+            manual_close=1,
+        )
     return tid
 
 
