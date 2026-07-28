@@ -89,6 +89,7 @@ up() {
     -e POSTGRES_DB="$DB_NAME" \
     -e PHP_TZ="$PHP_TZ" \
     -e ZBX_SERVER_NAME="Zoom Room POC" \
+    -e ZBX_MEMORYLIMIT=512M \
     "$ZBX_WEB_IMAGE"
 
   echo ">> Starting grafana (UI on :3000) with the Zabbix plugin..."

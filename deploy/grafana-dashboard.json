@@ -358,7 +358,7 @@
             "id": "convertFieldType",
             "options": {
               "conversions": [
-                { "targetField": "Time", "destinationType": "time" }
+                { "targetField": "Time", "destinationType": "time", "dateFormat": "X" }
               ]
             }
           },
