@@ -67,6 +67,9 @@ Once the stack is up and the poller has run, open the dashboard at
 - **Offline rooms over time** — trend history, top right (run the poller for a few days before a demo to populate it).
 - **Active issues** — every currently-firing offline / device trigger, tagged by building and floor.
 - **136-tile status grid** — the whole fleet on one screen; red = offline.
+- **Click any issue or room tile** to drill into that room's **30-day history**
+  (`/d/zoom-room-detail`): online/offline timeline, uptime %, outage log, and
+  device status (collected while the room is in the 5-room detail subset).
 
 <!-- 📸 Optional: add a close-up of the status grid as docs/images/status-grid.png -->
 
