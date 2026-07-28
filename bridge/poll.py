@@ -26,7 +26,9 @@ from mapper import sanitize_host_name, room_to_values, devices_to_values, fleet_
 FLEET_HOST = "SG-Fleet-Summary"
 
 REGION_PREFIX = os.environ.get("REGION_PREFIX", "SG")
-SUBSET_SIZE = int(os.environ.get("PERIPHERAL_SUBSET_SIZE", "5"))
+# 10/cycle x 120s sweeps ~130 online rooms in ~26 min — inside the device
+# triggers' nodata(30m) window, so healthy alerts don't self-clear mid-sweep.
+SUBSET_SIZE = int(os.environ.get("PERIPHERAL_SUBSET_SIZE", "10"))
 POLL_INTERVAL = int(os.environ.get("POLL_INTERVAL", "120"))
 
 
@@ -44,14 +46,24 @@ def fetch_region_rooms(client):
     return [x for x in rooms if x.get("name", "").upper().startswith(REGION_PREFIX.upper())]
 
 
-def choose_subset(rooms, size):
-    offline = [r for r in rooms if r.get("status") == "Offline"]
-    others = [r for r in rooms if r.get("status") != "Offline"]
-    ordered = sorted(offline, key=lambda r: r["name"]) + sorted(others, key=lambda r: r["name"])
-    return ordered[:size]
+def choose_subset(rooms, size, offset):
+    """Rotate a device-polling window through the ONLINE rooms.
+
+    Offline rooms are skipped: their devices are known-dead and the device
+    triggers are suppressed by the room-offline dependency anyway. The window
+    advances by `size` each cycle, so the whole online fleet is swept every
+    ceil(n/size) cycles — keep that sweep under the device triggers'
+    nodata(30m) window or healthy alerts self-clear between visits.
+    """
+    online = sorted((r for r in rooms if r.get("status") != "Offline"),
+                    key=lambda r: r["name"])
+    if not online:
+        return []
+    start = offset % len(online)
+    return [online[(start + i) % len(online)] for i in range(min(size, len(online)))]
 
 
-def cycle(client) -> dict:
+def cycle(client, offset=0) -> dict:
     rooms = fetch_region_rooms(client)
     batch = []
     for room in rooms:
@@ -59,8 +71,8 @@ def cycle(client) -> dict:
         for key, value in room_to_values(room).items():
             batch.append({"host": host, "key": key, "value": str(value)})
 
-    # peripheral detail for the subset
-    subset = choose_subset(rooms, SUBSET_SIZE)
+    # peripheral detail for the rotating subset
+    subset = choose_subset(rooms, SUBSET_SIZE, offset)
     for room in subset:
         host = sanitize_host_name(room["name"])
         resp = client.get(f"/rooms/{room['id']}/devices")
@@ -86,9 +98,11 @@ def main():
     args = ap.parse_args()
 
     client = ZoomClient()
+    offset = 0
     while True:
         try:
-            r = cycle(client)
+            r = cycle(client, offset)
+            offset += SUBSET_SIZE
             print(f"[poll {_now()}] rooms={r['rooms']} offline={r['offline']} "
                   f"subset={r['subset']} items={r['items']} -> {r['server']}", flush=True)
         except Exception as e:  # keep the loop alive on transient errors
