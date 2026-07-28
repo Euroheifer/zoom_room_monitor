@@ -34,9 +34,9 @@ After `up`, enable the Zabbix app plugin and add the datasource:
 This is idempotent and points Grafana at the Zabbix API over the pod's localhost.
 
 ## POC dashboard
-Import the Singapore fleet dashboard:
+Import the Singapore fleet dashboard and the per-room detail dashboard:
 ```bash
-./import-dashboard.sh      # creates/updates /d/zoom-sg-poc
+./import-dashboard.sh      # creates/updates /d/zoom-sg-poc and /d/zoom-room-detail
 ```
 Open it at **http://localhost:3001/d/zoom-sg-poc**. Panels: headline stats
 (total / online / offline / in-meeting), offline-rooms-over-time, an active-issues
@@ -51,3 +51,7 @@ problems list, and a 136-room status grid (red = offline).
   `localhost:10051` and Grafana reaches Zabbix at `localhost:8080`.
 - DB persists in the `zabbix-pgdata` volume; Grafana state in `zabbix-grafana`.
 - POC-only credentials (simple passwords). Not for production.
+- The Grafana image and the Zabbix plugin version are pinned in `zabbix-stack.sh`
+  (not `:latest`) because the issues-table transformation on the dashboards
+  depends on that plugin's internal frame shape, which an unpinned upgrade
+  could silently change.

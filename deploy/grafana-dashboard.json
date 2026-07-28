@@ -308,7 +308,29 @@
               }
             ]
           },
-          "overrides": []
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "Severity" },
+              "properties": [
+                {
+                  "id": "mappings",
+                  "value": [
+                    {
+                      "type": "value",
+                      "options": {
+                        "0": { "text": "Not classified" },
+                        "1": { "text": "Information" },
+                        "2": { "text": "Warning" },
+                        "3": { "text": "Average" },
+                        "4": { "text": "High" },
+                        "5": { "text": "Disaster" }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
         },
         "options": {
           "cellHeight": "sm",
@@ -329,6 +351,14 @@
                 { "path": "severity", "alias": "Severity" },
                 { "path": "name", "alias": "Problem" },
                 { "path": "tags", "alias": "Tags" }
+              ]
+            }
+          },
+          {
+            "id": "convertFieldType",
+            "options": {
+              "conversions": [
+                { "targetField": "Time", "destinationType": "time" }
               ]
             }
           },

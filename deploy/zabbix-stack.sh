@@ -31,7 +31,10 @@ GFVOL=zabbix-grafana
 PG_IMAGE=docker.io/library/postgres:16-alpine
 ZBX_SERVER_IMAGE=docker.io/zabbix/zabbix-server-pgsql:alpine-7.0-latest
 ZBX_WEB_IMAGE=docker.io/zabbix/zabbix-web-nginx-pgsql:alpine-7.0-latest
-GRAFANA_IMAGE=docker.io/grafana/grafana-oss:latest
+# Pinned (not :latest): the issues-table transformation depends on the Zabbix
+# plugin's internal frame shape, and an image/plugin bump can silently change it.
+GRAFANA_IMAGE=docker.io/grafana/grafana-oss:13.0.2
+ZABBIX_PLUGIN_VERSION=6.4.0
 
 # --- credentials (POC-only; fine to keep simple) ---
 DB_USER=zabbix
@@ -89,8 +92,12 @@ up() {
     "$ZBX_WEB_IMAGE"
 
   echo ">> Starting grafana (UI on :3000) with the Zabbix plugin..."
+  # Plugin version pinned alongside the image: the issues-table transformation
+  # depends on the plugin's internal frame shape (see GRAFANA_IMAGE comment above).
+  # GF_INSTALL_PLUGINS is deprecated in newer images and needs _FORCE to still run.
   podman run -d --pod "$POD" --name "${POD}-grafana" \
-    -e GF_INSTALL_PLUGINS=alexanderzobnin-zabbix-app \
+    -e GF_INSTALL_PLUGINS="alexanderzobnin-zabbix-app ${ZABBIX_PLUGIN_VERSION}" \
+    -e GF_INSTALL_PLUGINS_FORCE=true \
     -e GF_SECURITY_ADMIN_PASSWORD=admin \
     -v "${GFVOL}:/var/lib/grafana" \
     "$GRAFANA_IMAGE"

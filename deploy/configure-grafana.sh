@@ -5,6 +5,8 @@
 #   2. create (or update) the "Zabbix" datasource pointing at the Zabbix API
 #
 # Grafana reaches Zabbix over the shared pod localhost (127.0.0.1:8080).
+# This script only enables/pins the already-installed plugin; the plugin
+# itself is installed (and version-pinned to 6.4.0) by zabbix-stack.sh.
 #
 set -euo pipefail
 

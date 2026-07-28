@@ -19,11 +19,12 @@
           "type": "query",
           "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
           "query": {
-            "queryType": 1,
-            "group": { "filter": "Rooms/Singapore" },
-            "host": { "filter": "/.*/" },
-            "application": { "filter": "" },
-            "item": { "filter": "" }
+            "queryType": "host",
+            "group": "Rooms/Singapore",
+            "host": "/.*/",
+            "application": "",
+            "itemTag": "",
+            "item": ""
           },
           "refresh": 1,
           "sort": 1,
