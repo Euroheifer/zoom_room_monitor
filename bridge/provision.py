@@ -82,6 +82,23 @@ def ensure_trigger(api, description, expression, priority):
              {"description": description, "expression": expression, "priority": priority})
 
 
+def ensure_trigger_dependency(api, template_id, description, dep_template_id, dep_description):
+    """Make template trigger `description` depend on `dep_description`, so Zabbix
+    suppresses the dependent problem while the parent is active (e.g. no device
+    alerts while the whole room is offline — one incident, one row)."""
+    trig = api.call("trigger.get", {"templateids": template_id,
+                                    "filter": {"description": description},
+                                    "output": ["triggerid"],
+                                    "selectDependencies": ["triggerid"]})[0]
+    dep = api.call("trigger.get", {"templateids": dep_template_id,
+                                   "filter": {"description": dep_description},
+                                   "output": ["triggerid"]})[0]
+    if any(d["triggerid"] == dep["triggerid"] for d in trig.get("dependencies", [])):
+        return
+    api.call("trigger.update", {"triggerid": trig["triggerid"],
+                                "dependencies": [{"triggerid": dep["triggerid"]}]})
+
+
 # --- templates ----------------------------------------------------------------
 
 def build_room_template(api, tg_id):
@@ -194,6 +211,10 @@ def main():
     dev_tpl = build_device_template(api, tg_id)
     fleet_tpl = build_fleet_template(api, tg_id)
     ensure_fleet_host(api, hg_id, fleet_tpl)
+    for desc in ("Computer disconnected on {HOST.NAME}",
+                 "Controller disconnected on {HOST.NAME}"):
+        ensure_trigger_dependency(api, dev_tpl, desc,
+                                  room_tpl, "Room {HOST.NAME} is offline")
     print(f">> templates ready (room={room_tpl}, devices={dev_tpl}, fleet={fleet_tpl})")
 
     client = ZoomClient()

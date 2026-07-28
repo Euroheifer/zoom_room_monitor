@@ -1,5 +1,5 @@
-"""Unit tests for ensure_items against a stub Zabbix API."""
-from provision import ensure_items
+"""Unit tests for ensure_items / ensure_trigger_dependency against stub Zabbix APIs."""
+from provision import ensure_items, ensure_trigger_dependency
 
 
 class StubAPI:
@@ -37,3 +37,36 @@ def test_leaves_correct_item_alone():
     api = StubAPI([{"itemid": "42", "key_": "zoom.room.online", "history": "90d"}])
     ensure_items(api, "100", SPECS)
     assert [m for m, _ in api.calls] == ["item.get"]
+
+
+class SeqStubAPI:
+    """Stub returning queued responses in call order."""
+    def __init__(self, responses):
+        self.responses = list(responses)
+        self.calls = []
+
+    def call(self, method, params):
+        self.calls.append((method, params))
+        return self.responses.pop(0)
+
+
+def test_creates_missing_trigger_dependency():
+    api = SeqStubAPI([
+        [{"triggerid": "7", "dependencies": []}],   # dependent trigger lookup
+        [{"triggerid": "3"}],                        # parent trigger lookup
+        {"triggerids": ["7"]},                       # trigger.update result
+    ])
+    ensure_trigger_dependency(api, "200", "Computer disconnected on {HOST.NAME}",
+                              "100", "Room {HOST.NAME} is offline")
+    assert ("trigger.update",
+            {"triggerid": "7", "dependencies": [{"triggerid": "3"}]}) in api.calls
+
+
+def test_skips_existing_trigger_dependency():
+    api = SeqStubAPI([
+        [{"triggerid": "7", "dependencies": [{"triggerid": "3"}]}],
+        [{"triggerid": "3"}],
+    ])
+    ensure_trigger_dependency(api, "200", "Computer disconnected on {HOST.NAME}",
+                              "100", "Room {HOST.NAME} is offline")
+    assert not any(m == "trigger.update" for m, _ in api.calls)
