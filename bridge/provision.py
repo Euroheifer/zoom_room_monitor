@@ -57,17 +57,21 @@ def get_or_create_template(api, tech_name, tg_id):
                     {"host": tech_name, "groups": [{"groupid": tg_id}]})["templateids"][0]
 
 
-def ensure_items(api, template_id, specs):
-    """specs: list of (key, name, value_type)."""
-    existing = {i["key_"] for i in api.call("item.get",
-                {"templateids": template_id, "output": ["key_"]})}
+def ensure_items(api, template_id, specs, history="90d"):
+    """specs: list of (key, name, value_type). Creates missing items and keeps
+    history retention in sync on existing ones (a 30-day dashboard view needs
+    more margin than Zabbix's 31d default)."""
+    existing = {i["key_"]: i for i in api.call("item.get",
+                {"templateids": template_id, "output": ["itemid", "key_", "history"]})}
     for key, name, vtype in specs:
-        if key in existing:
-            continue
-        api.call("item.create", {
-            "name": name, "key_": key, "hostid": template_id,
-            "type": TYPE_TRAPPER, "value_type": vtype,
-        })
+        cur = existing.get(key)
+        if cur is None:
+            api.call("item.create", {
+                "name": name, "key_": key, "hostid": template_id,
+                "type": TYPE_TRAPPER, "value_type": vtype, "history": history,
+            })
+        elif cur["history"] != history:
+            api.call("item.update", {"itemid": cur["itemid"], "history": history})
 
 
 def ensure_trigger(api, description, expression, priority):
