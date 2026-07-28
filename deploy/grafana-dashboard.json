@@ -304,7 +304,7 @@
             "links": [
               {
                 "title": "Room history (30d)",
-                "url": "/d/zoom-room-detail?var-room=${__data.fields.Host:percentencode}&from=now-30d&to=now"
+                "url": "/d/zoom-room-detail?var-room=${__data.fields.host:percentencode}&from=now-30d&to=now"
               }
             ]
           },
@@ -316,6 +316,37 @@
           "showHeader": true,
           "sortBy": [{ "displayName": "Time", "desc": true }]
         },
+        "transformations": [
+          {
+            "id": "extractFields",
+            "options": {
+              "source": "Problems",
+              "format": "json",
+              "replace": true,
+              "jsonPaths": [
+                { "path": "timestamp", "alias": "Time" },
+                { "path": "hosts[0].name", "alias": "host" },
+                { "path": "severity", "alias": "Severity" },
+                { "path": "name", "alias": "Problem" },
+                { "path": "tags", "alias": "Tags" }
+              ]
+            }
+          },
+          {
+            "id": "organize",
+            "options": {
+              "indexByName": {
+                "Time": 0,
+                "host": 1,
+                "Severity": 2,
+                "Problem": 3,
+                "Tags": 4
+              },
+              "excludeByName": {},
+              "renameByName": {}
+            }
+          }
+        ],
         "targets": [
           {
             "refId": "A",
