@@ -300,30 +300,42 @@
         "type": "table",
         "fieldConfig": {
           "defaults": {
-            "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "filterable": false },
-            "links": [
-              {
-                "title": "Room history (30d)",
-                "url": "/d/zoom-room-detail?var-room=${__data.fields.host:percentencode}&from=now-30d&to=now"
-              }
-            ]
+            "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "filterable": false }
           },
           "overrides": [
             {
+              "matcher": { "id": "byName", "options": "Host" },
+              "properties": [
+                {
+                  "id": "links",
+                  "value": [
+                    {
+                      "title": "Room history (30d)",
+                      "url": "/d/zoom-room-detail?var-room=${__data.fields.Host:percentencode}&from=now-30d&to=now"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
               "matcher": { "id": "byName", "options": "Severity" },
               "properties": [
+                {
+                  "id": "custom.cellOptions",
+                  "value": { "type": "color-text" }
+                },
                 {
                   "id": "mappings",
                   "value": [
                     {
                       "type": "value",
                       "options": {
-                        "0": { "text": "Not classified" },
-                        "1": { "text": "Information" },
-                        "2": { "text": "Warning" },
-                        "3": { "text": "Average" },
-                        "4": { "text": "High" },
-                        "5": { "text": "Disaster" }
+                        "0": { "text": "Not classified", "color": "rgb(108, 108, 108)" },
+                        "1": { "text": "Information", "color": "rgb(120, 158, 183)" },
+                        "2": { "text": "Warning", "color": "rgb(175, 180, 36)" },
+                        "3": { "text": "Average", "color": "rgb(255, 137, 30)" },
+                        "4": { "text": "High", "color": "rgb(255, 101, 72)" },
+                        "5": { "text": "Disaster", "color": "rgb(215, 0, 0)" }
                       }
                     }
                   ]
@@ -349,8 +361,7 @@
                 { "path": "timestamp", "alias": "Time" },
                 { "path": "hosts[0].name", "alias": "host" },
                 { "path": "severity", "alias": "Severity" },
-                { "path": "name", "alias": "Problem" },
-                { "path": "tags", "alias": "Tags" }
+                { "path": "name", "alias": "Problem" }
               ]
             }
           },
@@ -369,11 +380,10 @@
                 "Time": 0,
                 "host": 1,
                 "Severity": 2,
-                "Problem": 3,
-                "Tags": 4
+                "Problem": 3
               },
               "excludeByName": {},
-              "renameByName": {}
+              "renameByName": { "host": "Host" }
             }
           }
         ],
