@@ -99,7 +99,7 @@
             "refId": "A"
           }
         ],
-        "title": "Online",
+        "title": "Online (SG total)",
         "type": "stat"
       },
       {
@@ -176,7 +176,7 @@
             "refId": "A"
           }
         ],
-        "title": "Offline now",
+        "title": "Offline now (SG total)",
         "type": "stat"
       },
       {
@@ -398,7 +398,7 @@
             "evaltype": "0",
             "application": { "filter": "" },
             "group": { "filter": "Rooms/Singapore" },
-            "host": { "filter": "/.*/" },
+            "host": { "filter": "/^SG-${building:regex}-${floor:regex}-/" },
             "item": { "filter": "" },
             "itemTag": { "filter": "" },
             "macro": { "filter": "" },
@@ -513,7 +513,7 @@
               "filter": "Rooms/Singapore"
             },
             "host": {
-              "filter": "/.*/"
+              "filter": "/^SG-${building:regex}-${floor:regex}-/"
             },
             "item": {
               "filter": "Room online (1/0)"
@@ -529,6 +529,40 @@
     ],
     "preload": false,
     "refresh": "30s",
+    "templating": {
+      "list": [
+        {
+          "name": "building",
+          "label": "Building",
+          "type": "query",
+          "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
+          "query": "Rooms/Singapore.*",
+          "regex": "/^SG-(?<value>[^-]+)-[^-]+-/",
+          "multi": true,
+          "includeAll": true,
+          "allValue": ".*",
+          "refresh": 1,
+          "sort": 1,
+          "current": { "selected": true, "text": ["All"], "value": ["$__all"] },
+          "options": []
+        },
+        {
+          "name": "floor",
+          "label": "Floor",
+          "type": "query",
+          "datasource": { "type": "alexanderzobnin-zabbix-datasource", "uid": "zabbix-poc" },
+          "query": "Rooms/Singapore.*",
+          "regex": "/^SG-[^-]+-(?<value>[^-]+)-/",
+          "multi": true,
+          "includeAll": true,
+          "allValue": ".*",
+          "refresh": 1,
+          "sort": 3,
+          "current": { "selected": true, "text": ["All"], "value": ["$__all"] },
+          "options": []
+        }
+      ]
+    },
     "schemaVersion": 42,
     "tags": [
       "zoom",
