@@ -109,6 +109,31 @@ A healthy poll cycle prints:
 
 **→ Full step-by-step walkthrough, troubleshooting, and operating notes in [`docs/SETUP.md`](docs/SETUP.md).**
 
+### Run against an existing Zabbix + Grafana (no local stack)
+
+Point the bridge at a real server via `bridge/.env` — no code changes:
+
+```bash
+ZBX_API_URL=https://zabbix.example.com/api_jsonrpc.php
+ZBX_API_TOKEN=...            # Users -> API tokens; wins over ZBX_USER/ZBX_PASS
+ZBX_TRAPPER_HOST=zabbix.example.com
+ZBX_SSL_VERIFY=false         # only for self-signed cert chains
+```
+
+Better still, on Zabbix 6.4+ the poller can move **inside the server** — a script
+item (`bridge/collector.js`) does the same Zoom OAuth → rooms → devices cycle and
+feeds the same trapper items via `history.push`, so no external machine runs
+anything. Credentials live as secret host macros, and a `nodata(10m)` trigger
+watches the collector itself:
+
+```bash
+cd bridge && ./run_install_collector.sh   # idempotent; re-run after editing collector.js
+```
+
+For an existing Grafana, import `deploy/grafana-dashboard.import.json` and
+`deploy/grafana-room-detail.import.json` via **Dashboards → New → Import** —
+each prompts you to pick your Zabbix datasource.
+
 ### Keep it running across reboots
 
 A macOS LaunchAgent (`deploy/com.zoomroom.poller.plist` + `deploy/poller-agent.sh`)

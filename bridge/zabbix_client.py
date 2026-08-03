@@ -16,10 +16,16 @@ from typing import Any
 import requests
 
 ZBX_API_URL = os.environ.get("ZBX_API_URL", "http://localhost:8080/api_jsonrpc.php")
+ZBX_API_TOKEN = os.environ.get("ZBX_API_TOKEN", "")
 ZBX_USER = os.environ.get("ZBX_USER", "Admin")
 ZBX_PASS = os.environ.get("ZBX_PASS", "zabbix")
 ZBX_TRAPPER_HOST = os.environ.get("ZBX_TRAPPER_HOST", "localhost")
 ZBX_TRAPPER_PORT = int(os.environ.get("ZBX_TRAPPER_PORT", "10051"))
+# Set ZBX_SSL_VERIFY=false for servers with a self-signed cert chain.
+ZBX_SSL_VERIFY = os.environ.get("ZBX_SSL_VERIFY", "true").lower() != "false"
+if not ZBX_SSL_VERIFY:
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class ZabbixAPIError(RuntimeError):
@@ -31,10 +37,12 @@ class ZabbixAPI:
         self.url = url
         self._user = user
         self._password = password
-        self._token: str | None = None
+        self._token: str | None = ZBX_API_TOKEN or None  # API token skips user.login
         self._id = 0
 
     def login(self) -> None:
+        if self._token:  # API token from env — no session login needed
+            return
         self._token = self._raw_call("user.login",
                                      {"username": self._user, "password": self._password},
                                      auth=False)
@@ -45,7 +53,8 @@ class ZabbixAPI:
         if auth and self._token:
             headers["Authorization"] = f"Bearer {self._token}"
         payload = {"jsonrpc": "2.0", "method": method, "params": params, "id": self._id}
-        resp = requests.post(self.url, headers=headers, data=json.dumps(payload), timeout=30)
+        resp = requests.post(self.url, headers=headers, data=json.dumps(payload), timeout=30,
+                             verify=ZBX_SSL_VERIFY)
         body = resp.json()
         if "error" in body:
             raise ZabbixAPIError(f"{method}: {body['error'].get('data', body['error'])}")

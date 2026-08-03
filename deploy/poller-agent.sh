@@ -20,6 +20,16 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] poller-agent: $*"; }
 
+# 0. Remote Zabbix? Then the local Podman stack is not ours to manage. -----
+trapper_host="$(sed -n 's/^ZBX_TRAPPER_HOST=//p' "$ROOT/bridge/.env" | tail -1)"
+case "${trapper_host:-localhost}" in
+  localhost|127.0.0.1) ;;  # local POC stack -> manage Podman below
+  *)
+    log "remote Zabbix target ($trapper_host) -> skipping Podman, starting poller"
+    exec "$ROOT/bridge/run_poll.sh" --loop
+    ;;
+esac
+
 # 1. Podman machine -------------------------------------------------------
 if ! "$PODMAN" info >/dev/null 2>&1; then
   log "Podman machine not reachable -> starting it"
