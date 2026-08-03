@@ -15,6 +15,8 @@ from __future__ import annotations
 import os
 import sys
 
+import re
+
 from zoom_client import ZoomClient
 from zabbix_client import ZabbixAPI
 from mapper import sanitize_host_name, parse_tags
@@ -181,6 +183,61 @@ def build_device_template(api, tg_id):
     return tid
 
 
+# --- locations ------------------------------------------------------------------
+# The Zoom location directory (floor <- building <- campus <- country) is the
+# source of truth for building/floor — room-name spelling drifts (GLX vs
+# Galaxis). Building = campus name minus the site prefix (SGP-GLX -> GLX).
+
+_CAMPUS_PREFIX = re.compile(r"^[A-Z]{2,4}-")
+# Rooms whose directory location shouldn't be shown as-is on dashboards:
+# tech host name -> (building, floor).
+LOCATION_OVERRIDES = {"SG-Office": ("GLX", "17F")}
+
+
+def fetch_locations(client):
+    locs, tok = [], None
+    while True:
+        params = {"page_size": 300}
+        if tok:
+            params["next_page_token"] = tok
+        r = client.get("/rooms/locations", params=params).json()
+        locs += r.get("locations", [])
+        tok = r.get("next_page_token") or ""
+        if not tok:
+            break
+    return {l["id"]: l for l in locs}
+
+
+def location_tags(room, locs):
+    """{'building','floor'} from the room's location chain; {} if unassigned.
+    Dashes are squashed so the SG-{building}-{floor}-{room} visible-name scheme
+    (which the dashboard filters parse) stays unambiguous."""
+    out, lid = {}, room.get("location_id")
+    while lid and lid in locs:
+        loc = locs[lid]
+        if loc.get("type") == "floor":
+            out["floor"] = loc["name"].replace("-", " ").strip()
+        elif loc.get("type") == "campus":
+            out["building"] = _CAMPUS_PREFIX.sub("", loc["name"]).replace("-", " ").strip()
+        lid = loc.get("parent_location_id")
+    return out
+
+
+def canonical_room_name(room, tech, locs):
+    """Visible host name SG-{building}-{floor}-{leaf}, location-directory-driven.
+    Falls back to the raw room name when the room has no building/floor."""
+    over = LOCATION_OVERRIDES.get(tech)
+    loc = dict(zip(("building", "floor"), over)) if over else location_tags(room, locs)
+    if "building" not in loc or "floor" not in loc:
+        return room["name"], loc
+    leaf = re.sub(rf"^{REGION_PREFIX}-[^-]+-[^-]+-", "", room["name"]).strip()
+    if not leaf:
+        leaf = room["name"]
+    if over:  # don't leak the raw name through the leaf (e.g. "SG-Office")
+        leaf = re.sub(rf"^{REGION_PREFIX}-", "", leaf)
+    return f"{REGION_PREFIX}-{loc['building']}-{loc['floor']}-{leaf}", loc
+
+
 # --- hosts --------------------------------------------------------------------
 
 def fetch_region_rooms(client):
@@ -197,31 +254,37 @@ def fetch_region_rooms(client):
     return [x for x in rooms if x.get("name", "").upper().startswith(REGION_PREFIX.upper())]
 
 
-def ensure_hosts(api, rooms, hg_id, room_tpl, dev_tpl):
+def ensure_hosts(api, rooms, locs, hg_id, room_tpl, dev_tpl):
     # Every host gets both templates: the poller's device subset is dynamic
     # (offline rooms first), so any room may receive device items on any cycle.
-    existing = {h["host"]: h["hostid"]
-                for h in api.call("host.get", {"groupids": hg_id, "output": ["host"]})}
-    created = linked = 0
+    # Visible name + tags come from the location directory and are kept in sync.
+    existing = {h["host"]: h
+                for h in api.call("host.get", {"groupids": hg_id,
+                                               "output": ["hostid", "host", "name"],
+                                               "selectTags": "extend"})}
+    created = renamed = linked = 0
     for room in rooms:
-        name = room["name"]
-        tech = sanitize_host_name(name)
-        tags = [{"tag": k, "value": v} for k, v in parse_tags(name).items()]
+        tech = sanitize_host_name(room["name"])
+        visible, loc = canonical_room_name(room, tech, locs)
+        tag_map = {"region": REGION_PREFIX, **(loc or parse_tags(room["name"]))}
+        tags = [{"tag": k, "value": v} for k, v in sorted(tag_map.items())]
         templates = [{"templateid": room_tpl}, {"templateid": dev_tpl}]
-        if tech in existing:
-            # keep idempotent: make sure template links are present
-            api.call("host.update", {"hostid": existing[tech], "templates": templates})
-            linked += 1
+        cur = existing.get(tech)
+        if cur is None:
+            api.call("host.create", {
+                "host": tech, "name": visible, "groups": [{"groupid": hg_id}],
+                "templates": templates, "tags": tags,
+            })
+            created += 1
             continue
-        api.call("host.create", {
-            "host": tech,
-            "name": name,
-            "groups": [{"groupid": hg_id}],
-            "templates": templates,
-            "tags": tags,
-        })
-        created += 1
-    return created, linked
+        upd = {"hostid": cur["hostid"], "templates": templates}
+        cur_tags = sorted((t["tag"], t["value"]) for t in cur.get("tags", []))
+        if cur["name"] != visible or cur_tags != sorted(tag_map.items()):
+            upd.update({"name": visible, "tags": tags})
+            renamed += 1
+        api.call("host.update", upd)
+        linked += 1
+    return created, renamed, linked
 
 
 def main():
@@ -243,10 +306,12 @@ def main():
 
     client = ZoomClient()
     rooms = fetch_region_rooms(client)
-    print(f">> {len(rooms)} {REGION_PREFIX} rooms from Zoom")
+    locs = fetch_locations(client)
+    print(f">> {len(rooms)} {REGION_PREFIX} rooms from Zoom, {len(locs)} directory locations")
 
-    created, linked = ensure_hosts(api, rooms, hg_id, room_tpl, dev_tpl)
-    print(f">> hosts: {created} created, {linked} already existed (templates re-linked)")
+    created, renamed, linked = ensure_hosts(api, rooms, locs, hg_id, room_tpl, dev_tpl)
+    print(f">> hosts: {created} created, {renamed} renamed/retagged, "
+          f"{linked} existing (templates re-linked)")
     print("Done.")
 
 
