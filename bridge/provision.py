@@ -20,6 +20,10 @@ from zabbix_client import ZabbixAPI
 from mapper import sanitize_host_name, parse_tags
 
 REGION_PREFIX = os.environ.get("REGION_PREFIX", "SG")
+# Must exceed the device sweep time: ceil(rooms/subset) * poll interval.
+# 135 rooms / 15 per 5m cycle ~= 45m -> 1h. At the 700-room final design,
+# raise to 3h (subset 30 -> ~2h sweep).
+DEVICE_STALE_WINDOW = os.environ.get("DEVICE_STALE_WINDOW", "1h")
 
 ROOM_TEMPLATE = "Template Zoom Room"
 DEV_TEMPLATE = "Template Zoom Room Devices"
@@ -170,7 +174,7 @@ def build_device_template(api, tg_id):
         ensure_trigger(
             api,
             f"{role.capitalize()} disconnected on {{HOST.NAME}}",
-            f"last(/{DEV_TEMPLATE}/{key})=0 and nodata(/{DEV_TEMPLATE}/{key},30m)=0",
+            f"last(/{DEV_TEMPLATE}/{key})=0 and nodata(/{DEV_TEMPLATE}/{key},{DEVICE_STALE_WINDOW})=0",
             SEV_AVERAGE,
             manual_close=1,
         )

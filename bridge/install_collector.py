@@ -29,8 +29,11 @@ PARAMETERS = [
     {"name": "zbx_url", "value": "{$ZOOM.ZBX.URL}"},
     {"name": "zbx_token", "value": "{$ZOOM.ZBX.TOKEN}"},
     {"name": "region", "value": os.environ.get("REGION_PREFIX", "SG")},
-    {"name": "subset_size", "value": os.environ.get("PERIPHERAL_SUBSET_SIZE", "10")},
-    {"name": "interval", "value": "120"},  # must match the item delay below
+    # subset/interval sizing: keep ceil(rooms/subset)*interval under the device
+    # triggers' DEVICE_STALE_WINDOW (see provision.py). 15 per 5m cycle sweeps
+    # 135 SG rooms in ~45m; at 700 rooms use subset 30 + a 3h window.
+    {"name": "subset_size", "value": os.environ.get("PERIPHERAL_SUBSET_SIZE", "15")},
+    {"name": "interval", "value": "300"},  # must match the item delay below
 ]
 
 
@@ -56,7 +59,7 @@ def main():
         "hostid": hostid,
         "type": 21,          # SCRIPT
         "value_type": 4,     # TEXT (JSON summary of the cycle)
-        "delay": "120s",
+        "delay": "300s",
         "timeout": "60s",
         "params": SCRIPT,
         "parameters": PARAMETERS,

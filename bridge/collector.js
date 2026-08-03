@@ -6,7 +6,7 @@
 // Item parameters (from host macros, see install_collector.py):
 //   account_id, client_id, client_secret  — Zoom S2S OAuth app
 //   zbx_url, zbx_token                    — this server's API + token
-//   region, subset_size, interval         — SG / 10 / 120 (match poll.py)
+//   region, subset_size, interval         — SG / 15 / 300 (see install_collector.py)
 //
 // Zabbix JS is Duktape (ES5): var/function only, no template literals.
 
