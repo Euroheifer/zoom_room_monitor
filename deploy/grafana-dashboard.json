@@ -100,7 +100,9 @@
      }
     ],
     "title": "Online (SG total)",
-    "type": "stat"
+    "type": "stat",
+    "timeFrom": "1h",
+    "hideTimeOverride": true
    },
    {
     "datasource": {
@@ -177,7 +179,9 @@
      }
     ],
     "title": "Offline now (SG total)",
-    "type": "stat"
+    "type": "stat",
+    "timeFrom": "1h",
+    "hideTimeOverride": true
    },
    {
     "datasource": {
@@ -808,7 +812,7 @@
    }
   ],
   "preload": false,
-  "refresh": "30s",
+  "refresh": "1m",
   "templating": {
    "list": [
     {
