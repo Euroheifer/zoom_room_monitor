@@ -1,893 +1,895 @@
 {
-  "overwrite": true,
-  "folderId": 0,
-  "dashboard": {
-    "annotations": {
-      "list": [
-        {
-          "builtIn": 1,
-          "datasource": {
-            "type": "grafana",
-            "uid": "-- Grafana --"
-          },
-          "enable": true,
-          "hide": true,
-          "iconColor": "rgba(0, 211, 255, 1)",
-          "name": "Annotations & Alerts",
-          "type": "dashboard"
-        }
-      ]
+ "overwrite": true,
+ "folderId": 0,
+ "dashboard": {
+  "annotations": {
+   "list": [
+    {
+     "builtIn": 1,
+     "datasource": {
+      "type": "grafana",
+      "uid": "-- Grafana --"
+     },
+     "enable": true,
+     "hide": true,
+     "iconColor": "rgba(0, 211, 255, 1)",
+     "name": "Annotations & Alerts",
+     "type": "dashboard"
+    }
+   ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "liveNow": false,
+  "panels": [
+   {
+    "datasource": {
+     "type": "alexanderzobnin-zabbix-datasource",
+     "uid": "zabbix-poc"
     },
-    "editable": true,
-    "fiscalYearStartMonth": 0,
-    "graphTooltip": 0,
-    "id": null,
-    "liveNow": false,
-    "panels": [
-      {
-        "datasource": {
-          "type": "alexanderzobnin-zabbix-datasource",
-          "uid": "zabbix-poc"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "fixedColor": "green",
-              "mode": "fixed"
-            },
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": 0
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          }
-        },
-        "gridPos": {
-          "h": 4,
-          "w": 6,
-          "x": 0,
-          "y": 0
-        },
-        "id": 2,
-        "options": {
-          "colorMode": "value",
-          "graphMode": "area",
-          "justifyMode": "auto",
-          "orientation": "auto",
-          "percentChangeColorMode": "standard",
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "showPercentChange": false,
-          "textMode": "value",
-          "wideLayout": true
-        },
-        "pluginVersion": "13.0.2",
-        "targets": [
-          {
-            "application": {
-              "filter": ""
-            },
-            "datasource": {
-              "type": "alexanderzobnin-zabbix-datasource",
-              "uid": "zabbix-poc"
-            },
-            "functions": [],
-            "group": {
-              "filter": "Rooms/Singapore"
-            },
-            "host": {
-              "filter": "SG Fleet Summary"
-            },
-            "item": {
-              "filter": "Fleet: rooms online"
-            },
-            "options": {},
-            "queryType": "0",
-            "refId": "A"
-          }
-        ],
-        "title": "Online (SG total)",
-        "type": "stat"
+    "fieldConfig": {
+     "defaults": {
+      "color": {
+       "fixedColor": "green",
+       "mode": "fixed"
       },
-      {
-        "datasource": {
-          "type": "alexanderzobnin-zabbix-datasource",
-          "uid": "zabbix-poc"
+      "thresholds": {
+       "mode": "absolute",
+       "steps": [
+        {
+         "color": "green",
+         "value": 0
         },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": 0
-                },
-                {
-                  "color": "red",
-                  "value": 1
-                }
-              ]
-            }
-          }
-        },
-        "gridPos": {
-          "h": 4,
-          "w": 6,
-          "x": 6,
-          "y": 0
-        },
-        "id": 3,
-        "options": {
-          "colorMode": "background",
-          "graphMode": "area",
-          "justifyMode": "auto",
-          "orientation": "auto",
-          "percentChangeColorMode": "standard",
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "showPercentChange": false,
-          "textMode": "value",
-          "wideLayout": true
-        },
-        "pluginVersion": "13.0.2",
-        "targets": [
-          {
-            "application": {
-              "filter": ""
-            },
-            "datasource": {
-              "type": "alexanderzobnin-zabbix-datasource",
-              "uid": "zabbix-poc"
-            },
-            "functions": [],
-            "group": {
-              "filter": "Rooms/Singapore"
-            },
-            "host": {
-              "filter": "SG Fleet Summary"
-            },
-            "item": {
-              "filter": "Fleet: rooms offline"
-            },
-            "options": {},
-            "queryType": "0",
-            "refId": "A"
-          }
-        ],
-        "title": "Offline now (SG total)",
-        "type": "stat"
-      },
-      {
-        "datasource": {
-          "type": "alexanderzobnin-zabbix-datasource",
-          "uid": "zabbix-poc"
-        },
-        "id": 5,
-        "gridPos": {
-          "h": 4,
-          "w": 12,
-          "x": 12,
-          "y": 0
-        },
-        "title": "Offline rooms over time",
-        "type": "timeseries",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "fixedColor": "red",
-              "mode": "fixed"
-            },
-            "custom": {
-              "drawStyle": "line",
-              "fillOpacity": 20,
-              "lineWidth": 2,
-              "showPoints": "never",
-              "spanNulls": false
-            },
-            "decimals": 0,
-            "min": 0,
-            "unit": "short"
-          },
-          "overrides": []
-        },
-        "options": {
-          "legend": {
-            "calcs": [],
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": false
-          },
-          "tooltip": {
-            "mode": "single",
-            "sort": "none"
-          }
-        },
-        "targets": [
-          {
-            "application": {
-              "filter": ""
-            },
-            "datasource": {
-              "type": "alexanderzobnin-zabbix-datasource",
-              "uid": "zabbix-poc"
-            },
-            "functions": [],
-            "group": {
-              "filter": "Rooms/Singapore"
-            },
-            "host": {
-              "filter": "SG Fleet Summary"
-            },
-            "item": {
-              "filter": "Fleet: rooms offline"
-            },
-            "options": {},
-            "queryType": "0",
-            "refId": "A"
-          }
-        ]
-      },
-      {
-        "datasource": {
-          "type": "alexanderzobnin-zabbix-datasource",
-          "uid": "zabbix-poc"
-        },
-        "gridPos": {
-          "h": 12,
-          "w": 24,
-          "x": 0,
-          "y": 4
-        },
-        "id": 6,
-        "title": "Active issues (SG) — click a row for 30-day room history",
-        "type": "table",
-        "fieldConfig": {
-          "defaults": {
-            "custom": {
-              "align": "auto",
-              "cellOptions": {
-                "type": "auto"
-              },
-              "filterable": false
-            }
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "Host"
-              },
-              "properties": [
-                {
-                  "id": "links",
-                  "value": [
-                    {
-                      "title": "Room history (30d)",
-                      "url": "/d/zoom-room-detail?var-room=${__data.fields.Host:percentencode}&from=now-30d&to=now"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "Severity"
-              },
-              "properties": [
-                {
-                  "id": "custom.cellOptions",
-                  "value": {
-                    "type": "color-text"
-                  }
-                },
-                {
-                  "id": "mappings",
-                  "value": [
-                    {
-                      "type": "value",
-                      "options": {
-                        "0": {
-                          "text": "Not classified",
-                          "color": "rgb(108, 108, 108)"
-                        },
-                        "1": {
-                          "text": "Information",
-                          "color": "rgb(120, 158, 183)"
-                        },
-                        "2": {
-                          "text": "Warning",
-                          "color": "rgb(175, 180, 36)"
-                        },
-                        "3": {
-                          "text": "Average",
-                          "color": "rgb(255, 137, 30)"
-                        },
-                        "4": {
-                          "text": "High",
-                          "color": "rgb(255, 101, 72)"
-                        },
-                        "5": {
-                          "text": "Disaster",
-                          "color": "rgb(215, 0, 0)"
-                        }
-                      }
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        "options": {
-          "cellHeight": "sm",
-          "footer": {
-            "show": false
-          },
-          "showHeader": true,
-          "sortBy": [
-            {
-              "displayName": "Time",
-              "desc": true
-            }
-          ]
-        },
-        "transformations": [
-          {
-            "id": "extractFields",
-            "options": {
-              "source": "Problems",
-              "format": "json",
-              "replace": true,
-              "jsonPaths": [
-                {
-                  "path": "timestamp",
-                  "alias": "Time"
-                },
-                {
-                  "path": "hosts[0].name",
-                  "alias": "host"
-                },
-                {
-                  "path": "severity",
-                  "alias": "Severity"
-                },
-                {
-                  "path": "name",
-                  "alias": "Problem"
-                }
-              ]
-            }
-          },
-          {
-            "id": "convertFieldType",
-            "options": {
-              "conversions": [
-                {
-                  "targetField": "Time",
-                  "destinationType": "time",
-                  "dateFormat": "X"
-                }
-              ]
-            }
-          },
-          {
-            "id": "organize",
-            "options": {
-              "indexByName": {
-                "Time": 0,
-                "host": 1,
-                "Severity": 2,
-                "Problem": 3
-              },
-              "excludeByName": {},
-              "renameByName": {
-                "host": "Host"
-              }
-            }
-          }
-        ],
-        "targets": [
-          {
-            "refId": "A",
-            "queryType": "5",
-            "schema": 12,
-            "showProblems": "problems",
-            "datasource": {
-              "type": "alexanderzobnin-zabbix-datasource",
-              "uid": "zabbix-poc"
-            },
-            "functions": [],
-            "evaltype": "0",
-            "application": {
-              "filter": ""
-            },
-            "group": {
-              "filter": "Rooms/Singapore"
-            },
-            "host": {
-              "filter": "/^SG-${building:regex}-${floor:regex}-/"
-            },
-            "item": {
-              "filter": ""
-            },
-            "itemTag": {
-              "filter": ""
-            },
-            "macro": {
-              "filter": ""
-            },
-            "proxy": {
-              "filter": ""
-            },
-            "tags": {
-              "filter": ""
-            },
-            "trigger": {
-              "filter": ""
-            },
-            "textFilter": "",
-            "countTriggersBy": "",
-            "options": {
-              "acknowledged": 2,
-              "count": false,
-              "disableDataAlignment": false,
-              "hostProxy": false,
-              "hostsInMaintenance": false,
-              "limit": 1001,
-              "minSeverity": 0,
-              "showDisabledItems": false,
-              "skipEmptyValues": false,
-              "sortProblems": "default",
-              "useTimeRange": false,
-              "useTrends": "default",
-              "useZabbixValueMapping": false
-            },
-            "resultFormat": "table",
-            "table": {
-              "skipEmptyValues": false
-            }
-          }
-        ]
-      },
-      {
-        "datasource": {
-          "type": "alexanderzobnin-zabbix-datasource",
-          "uid": "zabbix-poc"
-        },
-        "gridPos": {
-          "h": 8,
-          "w": 24,
-          "x": 0,
-          "y": 16
-        },
-        "id": 8,
-        "title": "Resolved issues — within dashboard time range",
-        "type": "table",
-        "fieldConfig": {
-          "defaults": {
-            "custom": {
-              "align": "auto",
-              "cellOptions": {
-                "type": "auto"
-              },
-              "filterable": false
-            }
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "Host"
-              },
-              "properties": [
-                {
-                  "id": "links",
-                  "value": [
-                    {
-                      "title": "Room history (30d)",
-                      "url": "/d/zoom-room-detail?var-room=${__data.fields.Host:percentencode}&from=now-30d&to=now"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "Severity"
-              },
-              "properties": [
-                {
-                  "id": "custom.cellOptions",
-                  "value": {
-                    "type": "color-text"
-                  }
-                },
-                {
-                  "id": "mappings",
-                  "value": [
-                    {
-                      "type": "value",
-                      "options": {
-                        "0": {
-                          "text": "Not classified",
-                          "color": "rgb(108, 108, 108)"
-                        },
-                        "1": {
-                          "text": "Information",
-                          "color": "rgb(120, 158, 183)"
-                        },
-                        "2": {
-                          "text": "Warning",
-                          "color": "rgb(175, 180, 36)"
-                        },
-                        "3": {
-                          "text": "Average",
-                          "color": "rgb(255, 137, 30)"
-                        },
-                        "4": {
-                          "text": "High",
-                          "color": "rgb(255, 101, 72)"
-                        },
-                        "5": {
-                          "text": "Disaster",
-                          "color": "rgb(215, 0, 0)"
-                        }
-                      }
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        "options": {
-          "cellHeight": "sm",
-          "footer": {
-            "show": false
-          },
-          "showHeader": true,
-          "sortBy": [
-            {
-              "displayName": "Time",
-              "desc": true
-            }
-          ]
-        },
-        "transformations": [
-          {
-            "id": "extractFields",
-            "options": {
-              "source": "Problems",
-              "format": "json",
-              "replace": true,
-              "jsonPaths": [
-                {
-                  "path": "timestamp",
-                  "alias": "Time"
-                },
-                {
-                  "path": "r_clock",
-                  "alias": "Resolved"
-                },
-                {
-                  "path": "hosts[0].name",
-                  "alias": "host"
-                },
-                {
-                  "path": "severity",
-                  "alias": "Severity"
-                },
-                {
-                  "path": "name",
-                  "alias": "Problem"
-                }
-              ]
-            }
-          },
-          {
-            "id": "convertFieldType",
-            "options": {
-              "conversions": [
-                {
-                  "targetField": "Time",
-                  "destinationType": "time",
-                  "dateFormat": "X"
-                },
-                {
-                  "targetField": "Resolved",
-                  "destinationType": "time",
-                  "dateFormat": "X"
-                }
-              ]
-            }
-          },
-          {
-            "id": "organize",
-            "options": {
-              "indexByName": {
-                "Time": 0,
-                "Resolved": 1,
-                "host": 2,
-                "Severity": 3,
-                "Problem": 4
-              },
-              "excludeByName": {},
-              "renameByName": {
-                "host": "Host"
-              }
-            }
-          }
-        ],
-        "targets": [
-          {
-            "refId": "A",
-            "queryType": "5",
-            "schema": 12,
-            "showProblems": "history",
-            "datasource": {
-              "type": "alexanderzobnin-zabbix-datasource",
-              "uid": "zabbix-poc"
-            },
-            "functions": [],
-            "evaltype": "0",
-            "application": {
-              "filter": ""
-            },
-            "group": {
-              "filter": "Rooms/Singapore"
-            },
-            "host": {
-              "filter": "/^SG-${building:regex}-${floor:regex}-/"
-            },
-            "item": {
-              "filter": ""
-            },
-            "itemTag": {
-              "filter": ""
-            },
-            "macro": {
-              "filter": ""
-            },
-            "proxy": {
-              "filter": ""
-            },
-            "tags": {
-              "filter": ""
-            },
-            "trigger": {
-              "filter": ""
-            },
-            "textFilter": "",
-            "countTriggersBy": "",
-            "options": {
-              "acknowledged": 2,
-              "count": false,
-              "disableDataAlignment": false,
-              "hostProxy": false,
-              "hostsInMaintenance": false,
-              "limit": 1001,
-              "minSeverity": 0,
-              "showDisabledItems": false,
-              "skipEmptyValues": false,
-              "sortProblems": "default",
-              "useTimeRange": true,
-              "useTrends": "default",
-              "useZabbixValueMapping": false
-            },
-            "resultFormat": "table",
-            "table": {
-              "skipEmptyValues": false
-            }
-          }
-        ]
-      },
-      {
-        "datasource": {
-          "type": "alexanderzobnin-zabbix-datasource",
-          "uid": "zabbix-poc"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "displayName": "${__field.labels.host}",
-            "mappings": [
-              {
-                "options": {
-                  "0": {
-                    "color": "red",
-                    "text": "OFFLINE"
-                  },
-                  "1": {
-                    "color": "green",
-                    "text": "OK"
-                  }
-                },
-                "type": "value"
-              }
-            ],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "red",
-                  "value": 0
-                },
-                {
-                  "color": "green",
-                  "value": 1
-                }
-              ]
-            },
-            "links": [
-              {
-                "title": "Room history (30d)",
-                "url": "/d/zoom-room-detail?var-room=${__field.labels.host:percentencode}&from=now-30d&to=now"
-              }
-            ]
-          }
-        },
-        "gridPos": {
-          "h": 11,
-          "w": 24,
-          "x": 0,
-          "y": 24
-        },
-        "id": 7,
-        "options": {
-          "colorMode": "background",
-          "graphMode": "none",
-          "justifyMode": "auto",
-          "orientation": "auto",
-          "percentChangeColorMode": "standard",
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "showPercentChange": false,
-          "textMode": "name",
-          "wideLayout": true
-        },
-        "pluginVersion": "13.0.2",
-        "targets": [
-          {
-            "application": {
-              "filter": ""
-            },
-            "datasource": {
-              "type": "alexanderzobnin-zabbix-datasource",
-              "uid": "zabbix-poc"
-            },
-            "functions": [],
-            "group": {
-              "filter": "Rooms/Singapore"
-            },
-            "host": {
-              "filter": "/^SG-${building:regex}-${floor:regex}-/"
-            },
-            "item": {
-              "filter": "Room online (1/0)"
-            },
-            "options": {},
-            "queryType": "0",
-            "refId": "A"
-          }
-        ],
-        "title": "Room status grid (red = offline)",
-        "type": "stat"
+        {
+         "color": "red",
+         "value": 80
+        }
+       ]
       }
+     }
+    },
+    "gridPos": {
+     "h": 4,
+     "w": 6,
+     "x": 0,
+     "y": 0
+    },
+    "id": 2,
+    "options": {
+     "colorMode": "value",
+     "graphMode": "area",
+     "justifyMode": "auto",
+     "orientation": "auto",
+     "percentChangeColorMode": "standard",
+     "reduceOptions": {
+      "calcs": [
+       "lastNotNull"
+      ],
+      "fields": "",
+      "values": false
+     },
+     "showPercentChange": false,
+     "textMode": "value",
+     "wideLayout": true
+    },
+    "pluginVersion": "13.0.2",
+    "targets": [
+     {
+      "application": {
+       "filter": ""
+      },
+      "datasource": {
+       "type": "alexanderzobnin-zabbix-datasource",
+       "uid": "zabbix-poc"
+      },
+      "functions": [],
+      "group": {
+       "filter": "Rooms/Singapore"
+      },
+      "host": {
+       "filter": "SG Fleet Summary"
+      },
+      "item": {
+       "filter": "Fleet: rooms online"
+      },
+      "options": {},
+      "queryType": "0",
+      "refId": "A"
+     }
     ],
-    "preload": false,
-    "refresh": "30s",
-    "templating": {
-      "list": [
+    "title": "Online (SG total)",
+    "type": "stat"
+   },
+   {
+    "datasource": {
+     "type": "alexanderzobnin-zabbix-datasource",
+     "uid": "zabbix-poc"
+    },
+    "fieldConfig": {
+     "defaults": {
+      "color": {
+       "mode": "thresholds"
+      },
+      "thresholds": {
+       "mode": "absolute",
+       "steps": [
         {
-          "name": "building",
-          "label": "Building",
-          "type": "query",
-          "datasource": {
-            "type": "alexanderzobnin-zabbix-datasource",
-            "uid": "zabbix-poc"
-          },
-          "query": "Rooms/Singapore.*",
-          "regex": "/^SG-(?<value>[^-]+)-[^-]+-/",
-          "multi": true,
-          "includeAll": true,
-          "allValue": ".*",
-          "refresh": 1,
-          "sort": 1,
-          "current": {
-            "selected": true,
-            "text": [
-              "All"
-            ],
-            "value": [
-              "$__all"
-            ]
-          },
-          "options": []
+         "color": "green",
+         "value": 0
         },
         {
-          "name": "floor",
-          "label": "Floor",
-          "type": "query",
-          "datasource": {
-            "type": "alexanderzobnin-zabbix-datasource",
-            "uid": "zabbix-poc"
-          },
-          "query": "Rooms/Singapore.*",
-          "regex": "/^SG-[^-]+-(?<value>[^-]+)-/",
-          "multi": true,
-          "includeAll": true,
-          "allValue": ".*",
-          "refresh": 1,
-          "sort": 3,
-          "current": {
-            "selected": true,
-            "text": [
-              "All"
-            ],
-            "value": [
-              "$__all"
-            ]
-          },
-          "options": []
+         "color": "red",
+         "value": 1
         }
-      ]
+       ]
+      }
+     }
     },
-    "schemaVersion": 42,
-    "tags": [
-      "zoom",
-      "poc"
+    "gridPos": {
+     "h": 4,
+     "w": 6,
+     "x": 6,
+     "y": 0
+    },
+    "id": 3,
+    "options": {
+     "colorMode": "background",
+     "graphMode": "area",
+     "justifyMode": "auto",
+     "orientation": "auto",
+     "percentChangeColorMode": "standard",
+     "reduceOptions": {
+      "calcs": [
+       "lastNotNull"
+      ],
+      "fields": "",
+      "values": false
+     },
+     "showPercentChange": false,
+     "textMode": "value",
+     "wideLayout": true
+    },
+    "pluginVersion": "13.0.2",
+    "targets": [
+     {
+      "application": {
+       "filter": ""
+      },
+      "datasource": {
+       "type": "alexanderzobnin-zabbix-datasource",
+       "uid": "zabbix-poc"
+      },
+      "functions": [],
+      "group": {
+       "filter": "Rooms/Singapore"
+      },
+      "host": {
+       "filter": "SG Fleet Summary"
+      },
+      "item": {
+       "filter": "Fleet: rooms offline"
+      },
+      "options": {},
+      "queryType": "0",
+      "refId": "A"
+     }
     ],
-    "time": {
-      "from": "now-6h",
-      "to": "now"
+    "title": "Offline now (SG total)",
+    "type": "stat"
+   },
+   {
+    "datasource": {
+     "type": "alexanderzobnin-zabbix-datasource",
+     "uid": "zabbix-poc"
     },
-    "timepicker": {
-      "refresh_intervals": [
-        "5s",
-        "10s",
-        "30s",
-        "1m",
-        "5m",
-        "15m",
-        "30m",
-        "1h",
-        "2h",
-        "1d"
+    "id": 5,
+    "gridPos": {
+     "h": 4,
+     "w": 12,
+     "x": 12,
+     "y": 0
+    },
+    "title": "Offline rooms over time",
+    "type": "timeseries",
+    "fieldConfig": {
+     "defaults": {
+      "color": {
+       "fixedColor": "red",
+       "mode": "fixed"
+      },
+      "custom": {
+       "drawStyle": "line",
+       "fillOpacity": 20,
+       "lineWidth": 2,
+       "showPoints": "never",
+       "spanNulls": false
+      },
+      "decimals": 0,
+      "min": 0,
+      "unit": "short"
+     },
+     "overrides": []
+    },
+    "options": {
+     "legend": {
+      "calcs": [],
+      "displayMode": "list",
+      "placement": "bottom",
+      "showLegend": false
+     },
+     "tooltip": {
+      "mode": "single",
+      "sort": "none"
+     }
+    },
+    "targets": [
+     {
+      "application": {
+       "filter": ""
+      },
+      "datasource": {
+       "type": "alexanderzobnin-zabbix-datasource",
+       "uid": "zabbix-poc"
+      },
+      "functions": [],
+      "group": {
+       "filter": "Rooms/Singapore"
+      },
+      "host": {
+       "filter": "SG Fleet Summary"
+      },
+      "item": {
+       "filter": "Fleet: rooms offline"
+      },
+      "options": {},
+      "queryType": "0",
+      "refId": "A"
+     }
+    ]
+   },
+   {
+    "datasource": {
+     "type": "alexanderzobnin-zabbix-datasource",
+     "uid": "zabbix-poc"
+    },
+    "gridPos": {
+     "h": 12,
+     "w": 24,
+     "x": 0,
+     "y": 4
+    },
+    "id": 6,
+    "title": "Active issues (SG) — click a row for 30-day room history",
+    "type": "table",
+    "fieldConfig": {
+     "defaults": {
+      "custom": {
+       "align": "auto",
+       "cellOptions": {
+        "type": "auto"
+       },
+       "filterable": false
+      }
+     },
+     "overrides": [
+      {
+       "matcher": {
+        "id": "byName",
+        "options": "Host"
+       },
+       "properties": [
+        {
+         "id": "links",
+         "value": [
+          {
+           "title": "Room history (30d)",
+           "url": "/d/zoom-room-detail?var-room=${__data.fields.Host:percentencode}&from=now-30d&to=now"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "matcher": {
+        "id": "byName",
+        "options": "Severity"
+       },
+       "properties": [
+        {
+         "id": "custom.cellOptions",
+         "value": {
+          "type": "color-text"
+         }
+        },
+        {
+         "id": "mappings",
+         "value": [
+          {
+           "type": "value",
+           "options": {
+            "0": {
+             "text": "Not classified",
+             "color": "rgb(108, 108, 108)"
+            },
+            "1": {
+             "text": "Information",
+             "color": "rgb(120, 158, 183)"
+            },
+            "2": {
+             "text": "Warning",
+             "color": "rgb(175, 180, 36)"
+            },
+            "3": {
+             "text": "Average",
+             "color": "rgb(255, 137, 30)"
+            },
+            "4": {
+             "text": "High",
+             "color": "rgb(255, 101, 72)"
+            },
+            "5": {
+             "text": "Disaster",
+             "color": "rgb(215, 0, 0)"
+            }
+           }
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "options": {
+     "cellHeight": "sm",
+     "footer": {
+      "show": false
+     },
+     "showHeader": true,
+     "sortBy": [
+      {
+       "displayName": "Time",
+       "desc": true
+      }
+     ]
+    },
+    "transformations": [
+     {
+      "id": "extractFields",
+      "options": {
+       "source": "Problems",
+       "format": "json",
+       "replace": true,
+       "jsonPaths": [
+        {
+         "path": "timestamp",
+         "alias": "Time"
+        },
+        {
+         "path": "hosts[0].name",
+         "alias": "host"
+        },
+        {
+         "path": "severity",
+         "alias": "Severity"
+        },
+        {
+         "path": "name",
+         "alias": "Problem"
+        }
+       ]
+      }
+     },
+     {
+      "id": "convertFieldType",
+      "options": {
+       "conversions": [
+        {
+         "targetField": "Time",
+         "destinationType": "time",
+         "dateFormat": "X"
+        }
+       ]
+      }
+     },
+     {
+      "id": "organize",
+      "options": {
+       "indexByName": {
+        "Time": 0,
+        "host": 1,
+        "Severity": 2,
+        "Problem": 3
+       },
+       "excludeByName": {},
+       "renameByName": {
+        "host": "Host"
+       }
+      }
+     }
+    ],
+    "targets": [
+     {
+      "refId": "A",
+      "queryType": "5",
+      "schema": 12,
+      "showProblems": "problems",
+      "datasource": {
+       "type": "alexanderzobnin-zabbix-datasource",
+       "uid": "zabbix-poc"
+      },
+      "functions": [],
+      "evaltype": "0",
+      "application": {
+       "filter": ""
+      },
+      "group": {
+       "filter": "Rooms/Singapore"
+      },
+      "host": {
+       "filter": "/^SG-${building:regex}-${floor:regex}-/"
+      },
+      "item": {
+       "filter": ""
+      },
+      "itemTag": {
+       "filter": ""
+      },
+      "macro": {
+       "filter": ""
+      },
+      "proxy": {
+       "filter": ""
+      },
+      "tags": {
+       "filter": ""
+      },
+      "trigger": {
+       "filter": ""
+      },
+      "textFilter": "",
+      "countTriggersBy": "",
+      "options": {
+       "acknowledged": 2,
+       "count": false,
+       "disableDataAlignment": false,
+       "hostProxy": false,
+       "hostsInMaintenance": false,
+       "limit": 1001,
+       "minSeverity": 0,
+       "showDisabledItems": false,
+       "skipEmptyValues": false,
+       "sortProblems": "default",
+       "useTimeRange": false,
+       "useTrends": "default",
+       "useZabbixValueMapping": false
+      },
+      "resultFormat": "table",
+      "table": {
+       "skipEmptyValues": false
+      }
+     }
+    ]
+   },
+   {
+    "datasource": {
+     "type": "alexanderzobnin-zabbix-datasource",
+     "uid": "zabbix-poc"
+    },
+    "gridPos": {
+     "h": 8,
+     "w": 24,
+     "x": 0,
+     "y": 16
+    },
+    "id": 8,
+    "title": "Resolved issues — within dashboard time range",
+    "type": "table",
+    "fieldConfig": {
+     "defaults": {
+      "custom": {
+       "align": "auto",
+       "cellOptions": {
+        "type": "auto"
+       },
+       "filterable": false
+      }
+     },
+     "overrides": [
+      {
+       "matcher": {
+        "id": "byName",
+        "options": "Host"
+       },
+       "properties": [
+        {
+         "id": "links",
+         "value": [
+          {
+           "title": "Room history (30d)",
+           "url": "/d/zoom-room-detail?var-room=${__data.fields.Host:percentencode}&from=now-30d&to=now"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "matcher": {
+        "id": "byName",
+        "options": "Severity"
+       },
+       "properties": [
+        {
+         "id": "custom.cellOptions",
+         "value": {
+          "type": "color-text"
+         }
+        },
+        {
+         "id": "mappings",
+         "value": [
+          {
+           "type": "value",
+           "options": {
+            "0": {
+             "text": "Not classified",
+             "color": "rgb(108, 108, 108)"
+            },
+            "1": {
+             "text": "Information",
+             "color": "rgb(120, 158, 183)"
+            },
+            "2": {
+             "text": "Warning",
+             "color": "rgb(175, 180, 36)"
+            },
+            "3": {
+             "text": "Average",
+             "color": "rgb(255, 137, 30)"
+            },
+            "4": {
+             "text": "High",
+             "color": "rgb(255, 101, 72)"
+            },
+            "5": {
+             "text": "Disaster",
+             "color": "rgb(215, 0, 0)"
+            }
+           }
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "options": {
+     "cellHeight": "sm",
+     "footer": {
+      "show": false
+     },
+     "showHeader": true,
+     "sortBy": [
+      {
+       "displayName": "Time",
+       "desc": true
+      }
+     ]
+    },
+    "transformations": [
+     {
+      "id": "extractFields",
+      "options": {
+       "source": "Problems",
+       "format": "json",
+       "replace": true,
+       "jsonPaths": [
+        {
+         "path": "timestamp",
+         "alias": "Time"
+        },
+        {
+         "path": "r_clock",
+         "alias": "Resolved"
+        },
+        {
+         "path": "hosts[0].name",
+         "alias": "host"
+        },
+        {
+         "path": "severity",
+         "alias": "Severity"
+        },
+        {
+         "path": "name",
+         "alias": "Problem"
+        }
+       ]
+      }
+     },
+     {
+      "id": "convertFieldType",
+      "options": {
+       "conversions": [
+        {
+         "targetField": "Time",
+         "destinationType": "time",
+         "dateFormat": "X"
+        },
+        {
+         "targetField": "Resolved",
+         "destinationType": "time",
+         "dateFormat": "X"
+        }
+       ]
+      }
+     },
+     {
+      "id": "organize",
+      "options": {
+       "indexByName": {
+        "Time": 0,
+        "Resolved": 1,
+        "host": 2,
+        "Severity": 3,
+        "Problem": 4
+       },
+       "excludeByName": {},
+       "renameByName": {
+        "host": "Host"
+       }
+      }
+     }
+    ],
+    "targets": [
+     {
+      "refId": "A",
+      "queryType": "5",
+      "schema": 12,
+      "showProblems": "history",
+      "datasource": {
+       "type": "alexanderzobnin-zabbix-datasource",
+       "uid": "zabbix-poc"
+      },
+      "functions": [],
+      "evaltype": "0",
+      "application": {
+       "filter": ""
+      },
+      "group": {
+       "filter": "Rooms/Singapore"
+      },
+      "host": {
+       "filter": "/^SG-${building:regex}-${floor:regex}-/"
+      },
+      "item": {
+       "filter": ""
+      },
+      "itemTag": {
+       "filter": ""
+      },
+      "macro": {
+       "filter": ""
+      },
+      "proxy": {
+       "filter": ""
+      },
+      "tags": {
+       "filter": ""
+      },
+      "trigger": {
+       "filter": ""
+      },
+      "textFilter": "",
+      "countTriggersBy": "",
+      "options": {
+       "acknowledged": 2,
+       "count": false,
+       "disableDataAlignment": false,
+       "hostProxy": false,
+       "hostsInMaintenance": false,
+       "limit": 1001,
+       "minSeverity": 0,
+       "showDisabledItems": false,
+       "skipEmptyValues": false,
+       "sortProblems": "default",
+       "useTimeRange": true,
+       "useTrends": "default",
+       "useZabbixValueMapping": false
+      },
+      "resultFormat": "table",
+      "table": {
+       "skipEmptyValues": false
+      }
+     }
+    ]
+   },
+   {
+    "datasource": {
+     "type": "alexanderzobnin-zabbix-datasource",
+     "uid": "zabbix-poc"
+    },
+    "fieldConfig": {
+     "defaults": {
+      "color": {
+       "mode": "thresholds"
+      },
+      "displayName": "${__field.labels.host}",
+      "mappings": [
+       {
+        "options": {
+         "0": {
+          "color": "red",
+          "text": "OFFLINE"
+         },
+         "1": {
+          "color": "green",
+          "text": "OK"
+         }
+        },
+        "type": "value"
+       }
+      ],
+      "thresholds": {
+       "mode": "absolute",
+       "steps": [
+        {
+         "color": "red",
+         "value": 0
+        },
+        {
+         "color": "green",
+         "value": 1
+        }
+       ]
+      },
+      "links": [
+       {
+        "title": "Room history (30d)",
+        "url": "/d/zoom-room-detail?var-room=${__field.labels.host:percentencode}&from=now-30d&to=now"
+       }
       ]
+     }
     },
-    "timezone": "browser",
-    "title": "Zoom Rooms — Singapore (POC)",
-    "uid": "zoom-sg-poc"
-  }
+    "gridPos": {
+     "h": 11,
+     "w": 24,
+     "x": 0,
+     "y": 24
+    },
+    "id": 7,
+    "options": {
+     "colorMode": "background",
+     "graphMode": "none",
+     "justifyMode": "auto",
+     "orientation": "auto",
+     "percentChangeColorMode": "standard",
+     "reduceOptions": {
+      "calcs": [
+       "lastNotNull"
+      ],
+      "fields": "",
+      "values": false
+     },
+     "showPercentChange": false,
+     "textMode": "name",
+     "wideLayout": true
+    },
+    "pluginVersion": "13.0.2",
+    "targets": [
+     {
+      "application": {
+       "filter": ""
+      },
+      "datasource": {
+       "type": "alexanderzobnin-zabbix-datasource",
+       "uid": "zabbix-poc"
+      },
+      "functions": [],
+      "group": {
+       "filter": "Rooms/Singapore"
+      },
+      "host": {
+       "filter": "/^SG-${building:regex}-${floor:regex}-/"
+      },
+      "item": {
+       "filter": "Room online (1/0)"
+      },
+      "options": {},
+      "queryType": "0",
+      "refId": "A"
+     }
+    ],
+    "title": "Room status grid (red = offline)",
+    "type": "stat",
+    "timeFrom": "15m",
+    "hideTimeOverride": true
+   }
+  ],
+  "preload": false,
+  "refresh": "30s",
+  "templating": {
+   "list": [
+    {
+     "name": "building",
+     "label": "Building",
+     "type": "query",
+     "datasource": {
+      "type": "alexanderzobnin-zabbix-datasource",
+      "uid": "zabbix-poc"
+     },
+     "query": "Rooms/Singapore.*",
+     "regex": "/^SG-(?<value>[^-]+)-[^-]+-/",
+     "multi": true,
+     "includeAll": true,
+     "allValue": ".*",
+     "refresh": 1,
+     "sort": 1,
+     "current": {
+      "selected": true,
+      "text": [
+       "All"
+      ],
+      "value": [
+       "$__all"
+      ]
+     },
+     "options": []
+    },
+    {
+     "name": "floor",
+     "label": "Floor",
+     "type": "query",
+     "datasource": {
+      "type": "alexanderzobnin-zabbix-datasource",
+      "uid": "zabbix-poc"
+     },
+     "query": "Rooms/Singapore.*",
+     "regex": "/^SG-[^-]+-(?<value>[^-]+)-/",
+     "multi": true,
+     "includeAll": true,
+     "allValue": ".*",
+     "refresh": 1,
+     "sort": 3,
+     "current": {
+      "selected": true,
+      "text": [
+       "All"
+      ],
+      "value": [
+       "$__all"
+      ]
+     },
+     "options": []
+    }
+   ]
+  },
+  "schemaVersion": 42,
+  "tags": [
+   "zoom",
+   "poc"
+  ],
+  "time": {
+   "from": "now-6h",
+   "to": "now"
+  },
+  "timepicker": {
+   "refresh_intervals": [
+    "5s",
+    "10s",
+    "30s",
+    "1m",
+    "5m",
+    "15m",
+    "30m",
+    "1h",
+    "2h",
+    "1d"
+   ]
+  },
+  "timezone": "browser",
+  "title": "Zoom Rooms — Singapore (POC)",
+  "uid": "zoom-sg-poc"
+ }
 }
