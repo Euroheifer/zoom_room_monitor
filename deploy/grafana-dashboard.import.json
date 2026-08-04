@@ -189,6 +189,15 @@
     "type": "alexanderzobnin-zabbix-datasource",
     "uid": "${DS_ZABBIX}"
    },
+   "id": 5,
+   "gridPos": {
+    "h": 4,
+    "w": 12,
+    "x": 12,
+    "y": 0
+   },
+   "title": "Offline rooms over time",
+   "type": "timeseries",
    "fieldConfig": {
     "defaults": {
      "color": {
@@ -196,67 +205,19 @@
       "mode": "fixed"
      },
      "custom": {
-      "axisBorderShow": false,
-      "axisCenteredZero": false,
-      "axisColorMode": "text",
-      "axisLabel": "",
-      "axisPlacement": "auto",
-      "barAlignment": 0,
-      "barWidthFactor": 0.6,
       "drawStyle": "line",
       "fillOpacity": 20,
-      "gradientMode": "none",
-      "hideFrom": {
-       "legend": false,
-       "tooltip": false,
-       "viz": false
-      },
-      "insertNulls": false,
-      "lineInterpolation": "linear",
       "lineWidth": 2,
-      "pointSize": 5,
-      "scaleDistribution": {
-       "type": "linear"
-      },
       "showPoints": "never",
-      "showValues": false,
-      "spanNulls": false,
-      "stacking": {
-       "group": "A",
-       "mode": "none"
-      },
-      "thresholdsStyle": {
-       "mode": "off"
-      }
+      "spanNulls": false
      },
-     "thresholds": {
-      "mode": "absolute",
-      "steps": [
-       {
-        "color": "green",
-        "value": 0
-       },
-       {
-        "color": "red",
-        "value": 80
-       }
-      ]
-     },
+     "decimals": 0,
+     "min": 0,
      "unit": "short"
-    }
-   },
-   "gridPos": {
-    "h": 4,
-    "w": 12,
-    "x": 12,
-    "y": 0
-   },
-   "id": 5,
-   "options": {
-    "annotations": {
-     "clustering": -1,
-     "multiLane": false
     },
+    "overrides": []
+   },
+   "options": {
     "legend": {
      "calcs": [],
      "displayMode": "list",
@@ -264,12 +225,10 @@
      "showLegend": false
     },
     "tooltip": {
-     "hideZeros": false,
      "mode": "single",
      "sort": "none"
     }
    },
-   "pluginVersion": "13.0.2",
    "targets": [
     {
      "application": {
@@ -293,9 +252,7 @@
      "queryType": "0",
      "refId": "A"
     }
-   ],
-   "title": "Offline rooms over time",
-   "type": "timeseries"
+   ]
   },
   {
    "datasource": {
@@ -525,6 +482,239 @@
     "type": "alexanderzobnin-zabbix-datasource",
     "uid": "${DS_ZABBIX}"
    },
+   "gridPos": {
+    "h": 8,
+    "w": 24,
+    "x": 0,
+    "y": 16
+   },
+   "id": 8,
+   "title": "Resolved issues \u2014 within dashboard time range",
+   "type": "table",
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "cellOptions": {
+       "type": "auto"
+      },
+      "filterable": false
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Host"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Room history (30d)",
+          "url": "/d/zoom-room-detail?var-room=${__data.fields.Host:percentencode}&from=now-30d&to=now"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Severity"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "0": {
+            "text": "Not classified",
+            "color": "rgb(108, 108, 108)"
+           },
+           "1": {
+            "text": "Information",
+            "color": "rgb(120, 158, 183)"
+           },
+           "2": {
+            "text": "Warning",
+            "color": "rgb(175, 180, 36)"
+           },
+           "3": {
+            "text": "Average",
+            "color": "rgb(255, 137, 30)"
+           },
+           "4": {
+            "text": "High",
+            "color": "rgb(255, 101, 72)"
+           },
+           "5": {
+            "text": "Disaster",
+            "color": "rgb(215, 0, 0)"
+           }
+          }
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "cellHeight": "sm",
+    "footer": {
+     "show": false
+    },
+    "showHeader": true,
+    "sortBy": [
+     {
+      "displayName": "Time",
+      "desc": true
+     }
+    ]
+   },
+   "transformations": [
+    {
+     "id": "extractFields",
+     "options": {
+      "source": "Problems",
+      "format": "json",
+      "replace": true,
+      "jsonPaths": [
+       {
+        "path": "timestamp",
+        "alias": "Time"
+       },
+       {
+        "path": "r_clock",
+        "alias": "Resolved"
+       },
+       {
+        "path": "hosts[0].name",
+        "alias": "host"
+       },
+       {
+        "path": "severity",
+        "alias": "Severity"
+       },
+       {
+        "path": "name",
+        "alias": "Problem"
+       }
+      ]
+     }
+    },
+    {
+     "id": "convertFieldType",
+     "options": {
+      "conversions": [
+       {
+        "targetField": "Time",
+        "destinationType": "time",
+        "dateFormat": "X"
+       },
+       {
+        "targetField": "Resolved",
+        "destinationType": "time",
+        "dateFormat": "X"
+       }
+      ]
+     }
+    },
+    {
+     "id": "organize",
+     "options": {
+      "indexByName": {
+       "Time": 0,
+       "Resolved": 1,
+       "host": 2,
+       "Severity": 3,
+       "Problem": 4
+      },
+      "excludeByName": {},
+      "renameByName": {
+       "host": "Host"
+      }
+     }
+    }
+   ],
+   "targets": [
+    {
+     "refId": "A",
+     "queryType": "5",
+     "schema": 12,
+     "showProblems": "history",
+     "datasource": {
+      "type": "alexanderzobnin-zabbix-datasource",
+      "uid": "${DS_ZABBIX}"
+     },
+     "functions": [],
+     "evaltype": "0",
+     "application": {
+      "filter": ""
+     },
+     "group": {
+      "filter": "Rooms/Singapore"
+     },
+     "host": {
+      "filter": "/^SG-${building:regex}-${floor:regex}-/"
+     },
+     "item": {
+      "filter": ""
+     },
+     "itemTag": {
+      "filter": ""
+     },
+     "macro": {
+      "filter": ""
+     },
+     "proxy": {
+      "filter": ""
+     },
+     "tags": {
+      "filter": ""
+     },
+     "trigger": {
+      "filter": ""
+     },
+     "textFilter": "",
+     "countTriggersBy": "",
+     "options": {
+      "acknowledged": 2,
+      "count": false,
+      "disableDataAlignment": false,
+      "hostProxy": false,
+      "hostsInMaintenance": false,
+      "limit": 1001,
+      "minSeverity": 0,
+      "showDisabledItems": false,
+      "skipEmptyValues": false,
+      "sortProblems": "default",
+      "useTimeRange": true,
+      "useTrends": "default",
+      "useZabbixValueMapping": false
+     },
+     "resultFormat": "table",
+     "table": {
+      "skipEmptyValues": false
+     }
+    }
+   ]
+  },
+  {
+   "datasource": {
+    "type": "alexanderzobnin-zabbix-datasource",
+    "uid": "${DS_ZABBIX}"
+   },
    "fieldConfig": {
     "defaults": {
      "color": {
@@ -571,7 +761,7 @@
     "h": 11,
     "w": 24,
     "x": 0,
-    "y": 16
+    "y": 24
    },
    "id": 7,
    "options": {
