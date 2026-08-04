@@ -418,7 +418,7 @@
   },
   {
    "type": "stat",
-   "title": "Now: status / versions",
+   "title": "Last known: status / versions",
    "id": 5,
    "gridPos": {
     "h": 6,
@@ -453,7 +453,7 @@
    "targets": [
     {
      "refId": "A",
-     "queryType": "0",
+     "queryType": "2",
      "datasource": {
       "type": "alexanderzobnin-zabbix-datasource",
       "uid": "${DS_ZABBIX}"
