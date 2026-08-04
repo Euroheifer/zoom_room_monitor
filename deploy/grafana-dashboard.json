@@ -188,7 +188,7 @@
          "defaultParams": []
         },
         "params": [
-         -1
+         "-1"
         ],
         "text": "scale(-1)"
        },
@@ -205,7 +205,7 @@
          "defaultParams": []
         },
         "params": [
-         1
+         "1"
         ],
         "text": "offset(1)"
        },

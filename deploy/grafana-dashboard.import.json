@@ -193,7 +193,7 @@
         "defaultParams": []
        },
        "params": [
-        -1
+        "-1"
        ],
        "text": "scale(-1)"
       },
@@ -210,7 +210,7 @@
         "defaultParams": []
        },
        "params": [
-        1
+        "1"
        ],
        "text": "offset(1)"
       },
@@ -326,7 +326,7 @@
     "y": 4
    },
    "id": 6,
-   "title": "Active issues (SG) \u2014 click a row for 30-day room history",
+   "title": "Active issues (SG) — click a row for 30-day room history",
    "type": "table",
    "fieldConfig": {
     "defaults": {
@@ -549,7 +549,7 @@
     "y": 16
    },
    "id": 8,
-   "title": "Resolved issues \u2014 within dashboard time range",
+   "title": "Resolved issues — within dashboard time range",
    "type": "table",
    "fieldConfig": {
     "defaults": {
@@ -954,6 +954,6 @@
   ]
  },
  "timezone": "browser",
- "title": "Zoom Rooms \u2014 Singapore (POC)",
+ "title": "Zoom Rooms — Singapore (POC)",
  "uid": "zoom-sg-poc"
 }
