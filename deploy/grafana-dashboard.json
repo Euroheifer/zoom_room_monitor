@@ -84,22 +84,33 @@
        "type": "alexanderzobnin-zabbix-datasource",
        "uid": "zabbix-poc"
       },
-      "functions": [],
+      "functions": [
+       {
+        "def": {
+         "category": "Aggregate",
+         "name": "sumSeries",
+         "params": [],
+         "defaultParams": []
+        },
+        "params": [],
+        "text": "sumSeries()"
+       }
+      ],
       "group": {
        "filter": "Rooms/Singapore"
       },
       "host": {
-       "filter": "SG Fleet Summary"
+       "filter": "/^SG-${building:regex}-${floor:regex}-/"
       },
       "item": {
-       "filter": "Fleet: rooms online"
+       "filter": "Room online (1/0)"
       },
       "options": {},
       "queryType": "0",
       "refId": "A"
      }
     ],
-    "title": "Online (SG total)",
+    "title": "Online",
     "type": "stat",
     "timeFrom": "1h",
     "hideTimeOverride": true
@@ -163,22 +174,67 @@
        "type": "alexanderzobnin-zabbix-datasource",
        "uid": "zabbix-poc"
       },
-      "functions": [],
+      "functions": [
+       {
+        "def": {
+         "category": "Transform",
+         "name": "scale",
+         "params": [
+          {
+           "name": "factor",
+           "type": "float"
+          }
+         ],
+         "defaultParams": []
+        },
+        "params": [
+         -1
+        ],
+        "text": "scale(-1)"
+       },
+       {
+        "def": {
+         "category": "Transform",
+         "name": "offset",
+         "params": [
+          {
+           "name": "delta",
+           "type": "float"
+          }
+         ],
+         "defaultParams": []
+        },
+        "params": [
+         1
+        ],
+        "text": "offset(1)"
+       },
+       {
+        "def": {
+         "category": "Aggregate",
+         "name": "sumSeries",
+         "params": [],
+         "defaultParams": []
+        },
+        "params": [],
+        "text": "sumSeries()"
+       }
+      ],
       "group": {
        "filter": "Rooms/Singapore"
       },
       "host": {
-       "filter": "SG Fleet Summary"
+       "filter": "/^SG-${building:regex}-${floor:regex}-/"
       },
       "item": {
-       "filter": "Fleet: rooms offline"
+       "filter": "Room online (1/0)"
       },
       "options": {},
       "queryType": "0",
       "refId": "A"
      }
     ],
-    "title": "Offline now (SG total)",
+    "title": "Offline now",
     "type": "stat",
     "timeFrom": "1h",
     "hideTimeOverride": true
@@ -195,7 +251,7 @@
      "x": 12,
      "y": 0
     },
-    "title": "Offline rooms over time",
+    "title": "Offline rooms over time (SG total)",
     "type": "timeseries",
     "fieldConfig": {
      "defaults": {
