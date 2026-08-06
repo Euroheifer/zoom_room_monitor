@@ -1,19 +1,18 @@
-# Zoom Room Monitoring — Fleet Visibility POC
+# Zoom Room Monitoring — Fleet Visibility
 
 > **Know the moment a meeting room goes dark — across the whole fleet.**
 
-A working proof-of-concept that monitors **real Zoom Rooms** through a battle-tested
-**Zabbix + Grafana** stack, driven by a thin custom **bridge** that polls the Zoom API.
-It's a faithful miniature of the approved production architecture — running today on
-**136 live Singapore rooms**.
+Monitors **real Zoom Rooms** through a **Zabbix + Grafana** stack — with the poller
+running **inside Zabbix itself** (a script item), so there is no extra server,
+VM, or laptop to keep alive. Live today on **135 Singapore rooms** on company
+infrastructure; designed to scale to the ~700-room global fleet by config.
 
-![Zabbix 7.0](https://img.shields.io/badge/Zabbix-7.0_LTS-CC0000?logo=zabbix&logoColor=white)
-![Grafana](https://img.shields.io/badge/Grafana-OSS-F46800?logo=grafana&logoColor=white)
+![Zabbix 6.4+](https://img.shields.io/badge/Zabbix-6.4%2B-CC0000?logo=zabbix&logoColor=white)
+![Grafana](https://img.shields.io/badge/Grafana-Zabbix_plugin-F46800?logo=grafana&logoColor=white)
 ![Python 3](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
-![Podman](https://img.shields.io/badge/Podman-pod-892CA0?logo=podman&logoColor=white)
-![Status](https://img.shields.io/badge/status-POC_working_end--to--end-success)
+![Status](https://img.shields.io/badge/status-live_in_production-success)
 
-![Grafana dashboard — online/offline headline stats, offline-over-time, active issues, and the 136-tile fleet status grid](docs/images/dashboard.png)
+![Grafana dashboard — online/offline headline stats, offline-over-time, active issues, and the fleet status grid](docs/images/dashboard.png)
 
 ---
 
@@ -21,157 +20,115 @@ It's a faithful miniature of the approved production architecture — running to
 
 Meeting rooms fail **silently**. A controller drops off Wi-Fi, a room PC won't wake,
 a device quietly unpairs — and nobody knows until someone walks into an important
-meeting and the room is dead. At fleet scale, "wait for a ticket" isn't a strategy:
-by the time a complaint arrives, the meeting is already ruined.
+meeting and the room is dead. At fleet scale, "wait for a ticket" isn't a strategy.
 
-**This POC makes the invisible visible** — continuous, fleet-wide health for every
+**This makes the invisible visible** — continuous, fleet-wide health for every
 room, so IT sees the failure before the user does.
 
-## What this proves
+## What it does
 
-On **real data, today** — not a mockup:
-
-- ✅ **136 real Singapore rooms** monitored as first-class hosts, tagged by region / building / floor.
-- ✅ **Fleet-wide offline detection** with anti-flap (a room must miss **two** polls before it's flagged).
-- ✅ **Device-disconnect detection** (room computer / controller) — catches *partial* failures, e.g. the PC is offline while the controller is still up.
-- ✅ **Fleet-level rollup** — every poll cycle pushes online / offline / in-meeting totals to a dedicated summary host, so headline stats have real history, not per-panel math.
-- ✅ **A live Grafana dashboard** — online/offline headline stats, offline-over-time history, an active-issues list, and a 136-tile status grid.
-- ✅ Built on **production-grade open source** (Zabbix + Grafana) — the demo stack *is* the real architecture, just smaller.
+- ✅ **Every room a first-class Zabbix host**, named and tagged (building / floor)
+  from the **Zoom location directory** — the source of truth, immune to
+  room-name spelling drift.
+- ✅ **Offline detection** fleet-wide with anti-flap (2 consecutive missed polls
+  → High alert, ~10 min detection at the 5-min interval).
+- ✅ **Device-disconnect detection** (room PC / controller) via a rotating
+  polling window — catches *partial* failures, with alerts suppressed while the
+  whole room is offline (one incident, one row).
+- ✅ **Self-monitoring feed** — the collector reports its own cycle summary and
+  a `nodata` watchdog trigger fires if it ever stops.
+- ✅ **Grafana dashboards for helpdesk**: Building/Floor filters (each team sees
+  their own rooms), filtered online/offline stats, active-issues work queue,
+  fleet status grid, resolved-issues history, and per-room 30-day drill-downs.
+- ✅ **Everything as code** — provisioning, the collector, and the dashboards
+  live in this repo; every piece is idempotent and re-runnable.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    Z["Zoom Rooms / Devices API"] -->|poll every 120s| B["Bridge<br/>(Python — the only custom code)"]
-    B -->|push values| T["Zabbix trapper"]
-    subgraph POD["Single Podman pod · zabbix-poc"]
-        T --> S["Zabbix Server<br/>hosts · triggers · history"]
-        S --> P[("PostgreSQL")]
-        S --> G["Grafana<br/>live dashboard"]
-    end
-    G -->|view| U["📊 IT / Stakeholders"]
+    Z["Zoom Rooms / Devices /<br/>Locations API"] <-->|"poll every 300s<br/>(script item, JS)"| S["Zabbix Server<br/>collector · hosts · triggers · history"]
+    S --> P[("DB")]
+    S -->|Zabbix API| G["Grafana<br/>dashboards + filters"]
+    B["provision.py<br/>(run on room changes)"] -->|JSON-RPC| S
+    G -->|view| U["📊 Helpdesk / IT"]
 ```
 
 **Why this shape:**
 
-- **The bridge is the only software we maintain** — everything else is off-the-shelf.
-- **Detection logic lives in Zabbix triggers, not code** — thresholds can be tuned without redeploying.
-- **The path to production is additive** — call-quality metrics, real-time webhooks, RBAC and alerting all bolt onto this same architecture. Nothing built here is thrown away.
+- **Zero custom infrastructure** — the collector (`bridge/collector.js`) runs *inside*
+  the Zabbix server as a script item and feeds the same trapper items via
+  `history.push`. Nothing to host, restart, or babysit.
+- **Detection logic lives in Zabbix triggers, not code** — thresholds tune without redeploys.
+- **The location directory drives structure** — move a room in Zoom, re-run
+  provisioning, and hosts/tags/dashboard filters follow.
 
-## See it live
+## Quick start (existing Zabbix + Grafana)
 
-Once the stack is up and the poller has run, open the dashboard at
-**`http://localhost:3001/d/zoom-sg-poc`**. It shows:
-
-- **Online / Offline now** — the two numbers that matter, at a glance.
-- **Offline rooms over time** — trend history, top right (run the poller for a few days before a demo to populate it).
-- **Active issues** — every currently-firing offline / device trigger, tagged by building and floor.
-- **136-tile status grid** — the whole fleet on one screen; red = offline.
-- **Click any issue or room tile** to drill into that room's **30-day history**
-  (`/d/zoom-room-detail`): online/offline timeline, uptime %, outage log, and
-  device status (collected by a rotating window over the online fleet, full
-  sweep every ~26 min).
-
-<!-- 📸 Optional: add a close-up of the status grid as docs/images/status-grid.png -->
-
-## Quick start
-
-> **Prerequisites:** macOS, [Podman](docs/SETUP.md) running, Python 3.11+, and a Zoom
-> Server-to-Server OAuth app with room + device read scopes.
+> **Prerequisites:** Zabbix 6.4+ whose server has outbound HTTPS to `api.zoom.us`,
+> an account/API token with host+template create rights, Grafana with the Zabbix
+> app plugin, and a Zoom Server-to-Server OAuth app (room/device/location read
+> scopes). Full checklist + verification steps: [`docs/SETUP.md`](docs/SETUP.md).
 
 ```bash
-# 1. Bring up the Zabbix + Grafana stack (Podman)
-cd deploy && ./zabbix-stack.sh up && ./configure-grafana.sh
+# 1. Configure credentials
+cd bridge && cp .env.example .env      # fill in Zoom + Zabbix values
 
-# 2. Configure Zoom credentials, then verify scopes (read-only gate)
-cd ../bridge && cp .env.example .env   # fill in ACCOUNT_ID / CLIENT_ID / CLIENT_SECRET
+# 2. Gate check (Zoom scopes, read-only)
 ./run_check.sh                         # must print GATE PASSED
 
-# 3. Provision Zabbix (host per room, templates, triggers) and start polling
-./run_provision.sh
-./run_poll.sh --loop                   # continuous; or run once without --loop to test
+# 3. Provision Zabbix: host group, 3 templates, one host per room
+./run_provision.sh                     # idempotent — re-run on room changes
 
-# 4. Import the dashboard
-cd ../deploy && ./import-dashboard.sh  # -> http://localhost:3001/d/zoom-sg-poc
+# 4. Install the in-Zabbix collector (script item + secret macros + watchdog)
+./run_install_collector.sh             # data flows within one 5-min cycle
+
+# 5. Import the dashboards into Grafana (UI: Dashboards -> New -> Import)
+#    deploy/grafana-dashboard.import.json  + deploy/grafana-room-detail.import.json
+#    — each prompts for your Zabbix datasource.
 ```
 
-> **Grafana password gotcha:** Grafana forces you to change the admin password on
-> your first UI login. After that, `admin:admin` stops working — pass your real
-> password to the deploy scripts via env var:
-> `GF_ADMIN_PASS=<your password> ./import-dashboard.sh` (same for
-> `configure-grafana.sh`). The import fails loudly if credentials are wrong.
-
-A healthy poll cycle prints:
+Healthy collector value (Monitoring → Latest data → `zoom.bridge.run`):
 
 ```
-[poll] rooms=136 offline=6 subset=5 items=292 -> processed: 292; failed: 0
+{"rooms":135,"offline":4,"subset":15,"items":326,"failed":0}
 ```
 
-**→ Full step-by-step walkthrough, troubleshooting, and operating notes in [`docs/SETUP.md`](docs/SETUP.md).**
-
-### Run against an existing Zabbix + Grafana (no local stack)
-
-Point the bridge at a real server via `bridge/.env` — no code changes:
-
-```bash
-ZBX_API_URL=https://zabbix.example.com/api_jsonrpc.php
-ZBX_API_TOKEN=...            # Users -> API tokens; wins over ZBX_USER/ZBX_PASS
-ZBX_TRAPPER_HOST=zabbix.example.com
-ZBX_SSL_VERIFY=false         # only for self-signed cert chains
-```
-
-Better still, on Zabbix 6.4+ the poller can move **inside the server** — a script
-item (`bridge/collector.js`) does the same Zoom OAuth → rooms → devices cycle and
-feeds the same trapper items via `history.push`, so no external machine runs
-anything. Credentials live as secret host macros, and a `nodata(10m)` trigger
-watches the collector itself:
-
-```bash
-cd bridge && ./run_install_collector.sh   # idempotent; re-run after editing collector.js
-```
-
-For an existing Grafana, import `deploy/grafana-dashboard.import.json` and
-`deploy/grafana-room-detail.import.json` via **Dashboards → New → Import** —
-each prompts you to pick your Zabbix datasource.
-
-### Keep it running across reboots
-
-A macOS LaunchAgent (`deploy/com.zoomroom.poller.plist` + `deploy/poller-agent.sh`)
-brings the Podman machine and stack up and keeps the poller alive unattended — ideal
-for building multi-day history before a demo:
-
-```bash
-cp deploy/com.zoomroom.poller.plist ~/Library/LaunchAgents/
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.zoomroom.poller.plist
-```
+**Sizing:** keep `ceil(rooms / subset_size) × interval` under the device triggers'
+stale window (`DEVICE_STALE_WINDOW`, default 1h). 135 rooms → subset 15 sweeps in
+~45 min. At ~700 rooms: `PERIPHERAL_SUBSET_SIZE=30`, `DEVICE_STALE_WINDOW=3h`.
 
 ## Project layout
 
 | Path | What's in it |
 |---|---|
-| [`bridge/`](bridge/) | The Python bridge: Zoom client, Zabbix trapper client, room→host mapper, provisioner, poller. |
-| [`deploy/`](deploy/) | Podman stack (`zabbix-stack.sh`), Grafana wiring, dashboard import, and the reboot-durable LaunchAgent. |
-| [`docs/`](docs/) | [`SETUP.md`](docs/SETUP.md) end-to-end guide + design specs under `docs/superpowers/specs/`. |
+| [`bridge/`](bridge/) | `collector.js` (the in-Zabbix poller) + `install_collector.py`, `provision.py` (hosts/templates/triggers from the Zoom location directory), scope checker, and a standalone Python poller for local testing. |
+| [`deploy/`](deploy/) | Grafana dashboard JSONs (`*.import.json` = UI-importable), plus the self-contained local demo stack (Podman) and its scripts. |
+| [`docs/`](docs/) | [`SETUP.md`](docs/SETUP.md) build guide · [`LOCAL-POC.md`](docs/LOCAL-POC.md) laptop demo · design specs under `docs/superpowers/specs/`. |
+
+## Local demo mode
+
+The original POC ran this entire stack self-contained on one laptop — Zabbix +
+Grafana in a Podman pod, polled by `run_poll.sh` (or a reboot-durable macOS
+LaunchAgent). That mode still works for demos without touching shared
+infrastructure: `deploy/zabbix-stack.sh up` and follow [`docs/LOCAL-POC.md`](docs/LOCAL-POC.md).
 
 ## Roadmap
 
-| In this POC | Deferred to production (additive) |
+| Done | Next (additive) |
 |---|---|
-| Offline + device-disconnect detection | Call-quality / QSS metrics |
-| Singapore fleet (136 rooms) | Real-time webhooks (vs polling) |
-| Dashboard-only | Multi-region RBAC |
-| | Alerting to email / Teams / Slack |
-| | Logitech Sync / Yealink enrichment |
-
-Each deferred item is a step on the **same architecture** — see the design specs in
-[`docs/superpowers/specs/`](docs/superpowers/specs/) for the full Phase-1 plan.
+| Offline + device-disconnect detection | Zoom webhooks (real-time events; polling stays as safety net) |
+| Singapore fleet on company Zabbix/Grafana | Remaining countries (~700 rooms) — per-region provisioning + dashboards |
+| Building/Floor helpdesk filters | Alerting to email / Teams / Slack |
+| Location-directory-driven naming | Call-quality / QSS metrics · Logitech Sync / Yealink enrichment |
 
 ## Security
 
-- Credentials live only in a **gitignored** `bridge/.env` — never committed. `.env.example` holds placeholders only.
-- The POC uses simple Zabbix / Grafana passwords; change them for any shared or long-lived deployment. (Grafana already forces a new admin password on first login — see the quick-start note.)
-- Rotate the Zoom client secret if it is ever exposed.
+- Credentials live only in the **gitignored** `bridge/.env` and as **secret host
+  macros** in Zabbix — never committed, never in dashboards.
+- All Zoom scopes are read-only. Rotate the client secret / API tokens on
+  exposure: update the macro and re-run the installer.
 
 ---
 
-<sub>Proof-of-concept for evaluation. Built on Zabbix 7.0 LTS · Grafana OSS · Python · Podman.</sub>
+<sub>Built on Zabbix · Grafana OSS · Python · and one JavaScript file that replaced a server.</sub>

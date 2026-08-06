@@ -1,201 +1,175 @@
-# Zoom Room Monitoring POC — End-to-End Setup Guide
+# Zoom Room Monitoring — Build Guide (existing Zabbix + Grafana)
 
-This guide takes you from a fresh macOS laptop to a working proof-of-concept that
-monitors **real Zoom Rooms** through a **Zabbix + Grafana** stack, driven by a thin
-custom **bridge** that polls the Zoom API. It is a faithful miniature of the
-approved Phase-1 architecture, intended to **demonstrate the concept to
-stakeholders** on live Singapore fleet data.
+A step-by-step guide to stand up Zoom Room fleet monitoring on an existing
+Zabbix + Grafana. Follow it top to bottom and you end with: every room a Zabbix
+host, offline + device-disconnect alerting, and Grafana dashboards with
+Building/Floor filters — with **the poller running inside Zabbix itself**
+(no laptop, VM, or extra server).
 
-- **Repo:** https://github.com/Euroheifer/zoom_room_monitor
-- **Design specs:** `docs/superpowers/specs/` (parent design + POC design)
-- **Status:** working end-to-end — 136 Singapore rooms monitored, offline +
-  device-disconnect detection, live Grafana dashboard.
+For the self-contained laptop demo (Podman stack), see
+[`LOCAL-POC.md`](LOCAL-POC.md) instead.
 
-> ⚠️ **Secrets:** never commit or paste your Zoom client secret or Confluence PAT.
-> Credentials live only in a gitignored `bridge/.env` on your machine.
-
----
-
-## 1. Architecture
-
-```
-Zoom Device/Rooms API ──► bridge (Python, poll) ──► Zabbix (Podman) ──► Grafana (Podman)
-                                                       hosts   = rooms     Zabbix datasource
-                                                       group   = region    live dashboard
-                                                       trapper items
-                                                       offline / device triggers
-```
-
-| Layer | Role | Where |
-|---|---|---|
-| **Bridge** | Polls Zoom, normalizes, pushes to Zabbix (the only custom software) | `bridge/` |
-| **Zabbix** | The "brain": hosts, triggers, history, RBAC | Podman pod `zabbix-poc` |
-| **Grafana** | The "face": dashboards | Podman pod `zabbix-poc` |
-
-Everything runs in **one Podman pod**, so the containers reach each other on
-`localhost` and the bridge (on the Mac host) pushes to the published trapper port.
+> ⚠️ **Secrets:** never commit or paste the Zoom client secret / Zabbix API
+> tokens. They belong only in the gitignored `bridge/.env` and in Zabbix
+> **secret macros**.
 
 ---
 
-## 2. Prerequisites
+## 0. Prerequisites
 
-- **macOS** (Apple Silicon or Intel).
-- **Podman** installed and the machine running. (See the companion doc
-  *Confluence MCP Setup (Podman)* for installing native arm64 Podman.)
-- **Python 3** (3.11+; tested on 3.14).
-- A **Zoom Server-to-Server OAuth app** with these read scopes:
-  - List Zoom Rooms + status (offline detection) — **required**
-  - Room devices (peripheral/device detection) — **required**
-  - Device Management, Dashboard metrics — optional (richer data later)
+| # | Prerequisite | How to check / get it |
+| --- | --- | --- |
+| 1 | **Zabbix 6.4+** (7.x recommended) | `curl -sk <ZABBIX_URL>/api_jsonrpc.php -H 'Content-Type: application/json-rpc' -d '{"jsonrpc":"2.0","method":"apiinfo.version","params":{},"id":1}'` — needs 6.4+ for `history.push` and script items |
+| 2 | Zabbix account with **create rights** for host groups, templates, hosts, items, triggers | Zabbix UI → Data collection → Hosts: you must see a **Create host** button |
+| 3 | A **Zabbix API token** | Zabbix UI → User settings → API tokens → Create |
+| 4 | Zabbix **server** has outbound HTTPS to `zoom.us` + `api.zoom.us` | Ask the Zabbix admins — the collector runs *on the server* |
+| 5 | **Grafana** with the Zabbix app plugin + a datasource for your Zabbix | Grafana → new panel → datasource picker shows "Zabbix". If not: admin installs `alexanderzobnin-zabbix-app`, adds a datasource (URL = `<ZABBIX_URL>/api_jsonrpc.php`, an API token, *Skip TLS verify* if self-signed) |
+| 6 | A **Zoom Server-to-Server OAuth app** with read scopes: List Zoom Rooms + status, Room devices, Room locations (all **required**) | Zoom Marketplace → Develop → Build App. Note the **Account ID / Client ID / Client Secret** |
+| 7 | Any machine with **Python 3.11+** and `git` for the one-time setup | Nothing keeps running on it afterwards |
+| 8 | Zoom **location directory** populated: every room on a floor, floors under buildings/campuses | Zoom admin portal → Rooms → Location directory. "Unassigned Rooms" should be 0 — this drives the Building/Floor filters |
 
----
+## Step 1 — Clone and configure
 
-## 3. Step-by-step
-
-### Step 1 — Start the Podman machine
-The stack needs ~4 GiB. Bump memory once (while the machine is stopped), then start:
 ```bash
-podman machine set --memory 4096      # one-time, if needed
-podman machine start
-podman run --rm hello-world           # sanity check
+git clone https://github.com/Euroheifer/zoom_room_monitor.git
+cd zoom_room_monitor/bridge
+cp .env.example .env    # then edit:
 ```
 
-### Step 2 — Stand up Zabbix + Grafana
-```bash
-cd zoom_room_monitor/deploy
-./zabbix-stack.sh up                   # pulls images, creates pod, starts all
-./zabbix-stack.sh status
 ```
-This launches `postgres + zabbix-server (7.0) + zabbix-web + grafana-oss` in the
-`zabbix-poc` pod. Endpoints:
-
-| Service | URL | Login |
-|---|---|---|
-| Zabbix UI | http://localhost:8080 | `Admin` / `zabbix` |
-| Grafana | http://localhost:3001 | `admin` / `admin` |
-| Zabbix trapper (bridge target) | `localhost:10051` | — |
-
-> Grafana is on **3001** because a native Grafana commonly holds **3000**.
-> Override ports if needed: `GF_PORT=3002 WEB_PORT=8090 ./zabbix-stack.sh up`.
-
-### Step 3 — Wire Grafana to Zabbix
-```bash
-./configure-grafana.sh                 # enables the Zabbix app + adds the datasource
-```
-Idempotent; pins the datasource to a fixed uid (`zabbix-poc`) and disables the
-host/item cache so newly provisioned rooms appear immediately.
-
-### Step 4 — Zoom credentials + scope check (the first gate)
-```bash
-cd ../bridge
-cp .env.example .env                   # then edit .env, fill in your 3 values
-./run_check.sh                         # verifies the app's scopes (read-only)
-```
-`.env` (gitignored) holds:
-```
-ZOOM_ACCOUNT_ID=...
+ZOOM_ACCOUNT_ID=...                                   # from the S2S OAuth app
 ZOOM_CLIENT_ID=...
 ZOOM_CLIENT_SECRET=...
+ZBX_API_URL=https://<your-zabbix>/api_jsonrpc.php
+ZBX_API_TOKEN=<your Zabbix API token>
+ZBX_TRAPPER_HOST=<your-zabbix-host>                   # only for optional manual testing
+ZBX_SSL_VERIFY=false                                  # only if the cert chain is self-signed
+REGION_PREFIX=SG                                      # your rooms' name prefix
 ```
-The check prints a table of endpoints and ends with **GATE PASSED** / **GATE
-BLOCKED** (listing any missing scopes to add in the Zoom Marketplace).
 
-### Step 5 — Provision Zabbix (hosts, templates, triggers)
+## Step 2 — Gate check: Zoom scopes
+
+```bash
+./run_check.sh          # must print GATE PASSED
+```
+
+If **GATE BLOCKED**, it lists the missing scopes — add them to the S2S app in
+the Zoom Marketplace and re-run. (This also builds the Python venv.)
+
+## Step 3 — Gate check: Zabbix API
+
+```bash
+curl -sk $ZBX_API_URL -H 'Content-Type: application/json-rpc' \
+  -H "Authorization: Bearer $ZBX_API_TOKEN" \
+  -d '{"jsonrpc":"2.0","method":"host.get","params":{"countOutput":true},"id":1}'
+```
+
+A number back = URL, token, and permissions all work.
+
+## Step 4 — Provision Zabbix
+
 ```bash
 ./run_provision.sh
 ```
-Creates the `Rooms/Singapore` host group, two templates, and **one Zabbix host
-per Singapore room** (region/building/floor tags parsed from the room name), plus
-a fleet-summary host. Idempotent.
 
-### Step 6 — Run the bridge (poll → map → push)
-```bash
-./run_poll.sh                          # one cycle (verify it works)
-./run_poll.sh --loop                   # continuous, every POLL_INTERVAL (120s)
-```
-Each cycle pulls all room statuses (one API call), device status for a small
-subset, computes fleet rollups, and pushes everything to the Zabbix trapper.
-Expected output: `rooms=136 offline=N ... processed: N; failed: 0`.
+Creates (idempotent — re-run any time):
 
-### Step 7 — Import the dashboard
-```bash
-cd ../deploy
-./import-dashboard.sh                  # creates /d/zoom-sg-poc
-```
-Open **http://localhost:3001/d/zoom-sg-poc**.
+- Host group **`Rooms/<Region>`**, template group **`Templates/Zoom`**.
+- **Template Zoom Room** — `zoom.room.status` (text) + `zoom.room.online` (1/0,
+  90d history); trigger *"Room {HOST.NAME} is offline"* fires after **2
+  consecutive** offline polls (anti-flap), severity High.
+- **Template Zoom Room Devices** — computer/controller status + version items;
+  disconnect triggers (severity Average — shown as **Medium** on dashboards)
+  that self-clear on stale data (`DEVICE_STALE_WINDOW`, default 1h) and
+  **depend on the room-offline trigger** (a dead room raises one alert, not three).
+- **Template Zoom Fleet** — `zoom.fleet.{total,online,offline,inmeeting}`.
+- **One host per room** (both templates linked). Technical name = sanitized
+  Zoom room name (data lands by it; never changes). **Visible name =
+  `{REGION}-{building}-{floor}-{room}` derived from the Zoom location
+  directory** — the canonical form the dashboard filters parse; re-runs
+  re-sync it. Cosmetic exceptions go in `LOCATION_OVERRIDES` in `provision.py`.
+- Fleet summary host **`<REGION>-Fleet-Summary`**.
 
----
+**Verify:** Zabbix UI → Data collection → Hosts → filter the group — one host
+per room, correctly named.
 
-## 4. What the demo shows
-
-- **136 real Singapore rooms** as Zabbix hosts, tagged by region/building/floor.
-- **Offline detection** fleet-wide (anti-flap: must be offline two polls running).
-- **Device-disconnect detection** (computer / controller) on a 5-room subset —
-  including real partial failures (e.g. computer offline while the controller is up).
-- **Grafana dashboard:** headline stats (total / online / offline / in-meeting),
-  offline-rooms-over-time, an active-issues list, and a 136-tile status grid
-  (red = offline).
-- Run the poller for a few days before the demo so the history graphs are populated.
-
----
-
-## 5. Data model
-
-| Object | Zabbix mapping |
-|---|---|
-| Region | Host group `Rooms/Singapore` |
-| Room | Host (visible name = full room name; tags region/building/floor) |
-| Room status | Item `zoom.room.status` (text) + `zoom.room.online` (1/0) |
-| Devices (subset) | `zoom.device.computer.status`, `zoom.device.controller.status` |
-| Fleet rollups | Host `SG Fleet Summary`: `zoom.fleet.{total,online,offline,inmeeting}` |
-| Offline trigger | `min(/Template Zoom Room/zoom.room.online,#2)=0` — High |
-| Device trigger | `last(.../zoom.device.*.status)=0` — Average |
-
-Detection logic lives in **Zabbix triggers**, not in the bridge — so thresholds
-can be tuned without redeploying code.
-
----
-
-## 6. Operating notes
+## Step 5 — Install the in-Zabbix collector
 
 ```bash
-deploy/zabbix-stack.sh status          # pod / container / volume status
-deploy/zabbix-stack.sh logs server     # logs: db | server | web | grafana
-deploy/zabbix-stack.sh down            # stop pod, keep DB volume
-deploy/zabbix-stack.sh destroy         # stop + delete volumes (full reset)
+./run_install_collector.sh
 ```
-- **Podman must be running** for the stack: `podman machine start` (it does not
-  auto-start after reboot). To keep the poller alive across reboots, run it as a
-  macOS LaunchAgent rather than a foreground process.
-- DB persists in volume `zabbix-pgdata`; Grafana in `zabbix-grafana`.
+
+Creates on the fleet-summary host:
+
+- **Script item `zoom.bridge.run`** (`bridge/collector.js`, interval **300s**,
+  timeout 60s). Each cycle: Zoom OAuth → `GET /rooms` → `GET /rooms/{id}/devices`
+  for a rotating **15-room window** over the online fleet → fleet rollups → one
+  `history.push` call feeding the trapper items.
+- **Credential macros** `{$ZOOM.*}` / `{$ZOOM.ZBX.*}` (secrets as secret macros).
+- **Watchdog trigger** *"Zoom collector stopped reporting"* (`nodata 10m`, High).
+
+**Verify (within ~5 min):** Monitoring → Latest data → `zoom.bridge.run`:
+
+```
+{"rooms":135,"offline":4,"subset":15,"items":326,"failed":0}
+```
+
+`failed: 0` is the health signal; then spot-check a room host's `zoom.room.online`.
+
+**Sizing rule:** keep `ceil(rooms / subset_size) × interval` **below**
+`DEVICE_STALE_WINDOW`. ~700 rooms → `PERIPHERAL_SUBSET_SIZE=30`,
+`DEVICE_STALE_WINDOW=3h`, re-run Steps 4–5. Detection latency: room offline
+≈ 2 × interval; device disconnect ≤ one full sweep.
+
+## Step 6 — Import the Grafana dashboards
+
+Grafana → **Dashboards → New → Import → Upload JSON file**, once per file
+(accept "overwrite" on re-imports); each prompts for your Zabbix datasource:
+
+1. `deploy/grafana-dashboard.import.json` — fleet dashboard: Building/Floor
+   filters, filtered Online/Offline stats, fleet offline trend, **Active
+   issues** (rows disappear on recovery), status grid (red = offline,
+   click-through), **Resolved issues** within the time range.
+2. `deploy/grafana-room-detail.import.json` — per-room 30-day drill-down.
+
+**Verify:** Online + Offline = your room count; picking one building shrinks
+all panels; clicking a room tile opens its 30-day detail.
+
+## Step 7 — Updating dashboards later
+
+Dashboards live in git, not Grafana. Edit the JSON in `deploy/`, regenerate the
+`.import.json`, re-import. If you edit in the Grafana UI, **export back to the
+repo** (Share → Export) so git stays the source of truth.
 
 ---
 
-## 7. Troubleshooting
+## Setting up another country
+
+1. `REGION_PREFIX=TH` in `.env` (rooms named `TH-…`, present in the location
+   directory). Adjust the host-group name in `provision.py` (currently
+   `Rooms/Singapore`).
+2. Run Steps 4–5 — separate host group, fleet host, and collector per region.
+3. Copy the fleet dashboard JSON: swap group filter, `SG-` regex prefixes,
+   title, and `uid`; import. The room-detail dashboard is region-agnostic.
+
+## Routine operations
+
+| Situation | Action |
+| --- | --- |
+| Rooms added / renamed in Zoom | `./run_provision.sh`. Renames create a new host — delete the old one if history isn't needed |
+| Room moved building/floor | Fix the Zoom **location directory**, re-run provisioning |
+| Zoom secret / Zabbix token rotated | Update `.env`, re-run `./run_install_collector.sh` |
+| Collector health | Latest value of `zoom.bridge.run`; the watchdog fires on silence |
+| Tune thresholds | Edit `provision.py` / env vars, re-run — triggers update in place |
+
+## Troubleshooting
 
 | Symptom | Fix |
-|---|---|
-| `address already in use` on stack up | Another service holds 8080/3000/10051. Override `WEB_PORT`/`GF_PORT`/`TRAP_PORT`. |
-| Grafana shows no new rooms after provisioning | Datasource cache. `podman restart zabbix-poc-grafana` or set cacheTTL=0 (already done by `configure-grafana.sh`). |
-| Scope check says GATE BLOCKED | Add the listed scopes to the Server-to-Server OAuth app in the Zoom Marketplace, then re-run. |
-| Trapper `failed: N` | The host/item doesn't exist yet — run `run_provision.sh` before `run_poll.sh`. |
-| `vfkit exited unexpectedly` | Intel Podman on Apple Silicon — install native arm64 Podman, recreate the machine. |
-
----
-
-## 8. Security
-
-- `bridge/.env` is gitignored — never commit it. `.env.example` holds placeholders only.
-- POC uses simple Zabbix/Grafana passwords; change them for any shared/long-lived use.
-- Rotate the Zoom client secret if it is ever exposed.
-
----
-
-## 9. Scope & next phases
-
-**In this POC:** offline + device-disconnect, Singapore fleet, dashboard-only.
-
-**Deferred (per the design):** call-quality / QSS metrics, webhooks (real-time),
-multi-region RBAC, alerting to email/Teams/Slack, and Logitech Sync / Yealink
-enrichment. Each is an additive step on the same architecture — nothing built
-here is thrown away.
+| --- | --- |
+| Collector value shows `failed: N` | Rooms exist in Zoom that Zabbix doesn't know — re-run provisioning |
+| "Zoom collector stopped reporting" | Open the `zoom.bridge.run` item — its error names the failing call. Usually rotated credentials |
+| GATE BLOCKED | Add the listed scopes to the S2S app, re-run |
+| SSL errors from the Python scripts | `ZBX_SSL_VERIFY=false` in `.env` |
+| A building shows twice in the filter | Name drift — the location directory wins; re-run provisioning |
+| Room missing from filtered views | No location assigned in Zoom — assign it, re-run provisioning |
+| Panels intermittently error with an HTML "521" page | The Zabbix web frontend blipped — refresh; report to the Zabbix admins if frequent |
