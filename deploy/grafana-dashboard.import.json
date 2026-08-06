@@ -549,7 +549,7 @@
     "y": 27
    },
    "id": 8,
-   "title": "Issue history \u2014 fired within dashboard time range",
+   "title": "Resolved issues \u2014 within dashboard time range",
    "type": "table",
    "fieldConfig": {
     "defaults": {
@@ -626,38 +626,6 @@
         ]
        }
       ]
-     },
-     {
-      "matcher": {
-       "id": "byName",
-       "options": "Status"
-      },
-      "properties": [
-       {
-        "id": "custom.cellOptions",
-        "value": {
-         "type": "color-text"
-        }
-       },
-       {
-        "id": "mappings",
-        "value": [
-         {
-          "type": "value",
-          "options": {
-           "0": {
-            "text": "Resolved",
-            "color": "green"
-           },
-           "1": {
-            "text": "Active",
-            "color": "rgb(255, 137, 30)"
-           }
-          }
-         }
-        ]
-       }
-      ]
      }
     ]
    },
@@ -706,6 +674,24 @@
      }
     },
     {
+     "id": "filterByValue",
+     "options": {
+      "type": "include",
+      "match": "all",
+      "filters": [
+       {
+        "fieldName": "Status",
+        "config": {
+         "id": "equal",
+         "options": {
+          "value": "0"
+         }
+        }
+       }
+      ]
+     }
+    },
+    {
      "id": "convertFieldType",
      "options": {
       "conversions": [
@@ -727,7 +713,9 @@
        "Severity": 3,
        "Problem": 4
       },
-      "excludeByName": {},
+      "excludeByName": {
+       "Status": true
+      },
       "renameByName": {
        "host": "Host"
       }
