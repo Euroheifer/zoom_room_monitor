@@ -541,10 +541,10 @@
      "h": 8,
      "w": 24,
      "x": 0,
-     "y": 16
+     "y": 27
     },
     "id": 8,
-    "title": "Resolved issues — within dashboard time range",
+    "title": "Issue history — fired within dashboard time range",
     "type": "table",
     "fieldConfig": {
      "defaults": {
@@ -621,6 +621,38 @@
          ]
         }
        ]
+      },
+      {
+       "matcher": {
+        "id": "byName",
+        "options": "Status"
+       },
+       "properties": [
+        {
+         "id": "custom.cellOptions",
+         "value": {
+          "type": "color-text"
+         }
+        },
+        {
+         "id": "mappings",
+         "value": [
+          {
+           "type": "value",
+           "options": {
+            "0": {
+             "text": "Resolved",
+             "color": "green"
+            },
+            "1": {
+             "text": "Active",
+             "color": "rgb(255, 137, 30)"
+            }
+           }
+          }
+         ]
+        }
+       ]
       }
      ]
     },
@@ -650,8 +682,8 @@
          "alias": "Time"
         },
         {
-         "path": "r_clock",
-         "alias": "Resolved"
+         "path": "value",
+         "alias": "Status"
         },
         {
          "path": "hosts[0].name",
@@ -676,11 +708,6 @@
          "targetField": "Time",
          "destinationType": "time",
          "dateFormat": "X"
-        },
-        {
-         "targetField": "Resolved",
-         "destinationType": "time",
-         "dateFormat": "X"
         }
        ]
       }
@@ -690,7 +717,7 @@
       "options": {
        "indexByName": {
         "Time": 0,
-        "Resolved": 1,
+        "Status": 1,
         "host": 2,
         "Severity": 3,
         "Problem": 4
@@ -816,7 +843,7 @@
      "h": 11,
      "w": 24,
      "x": 0,
-     "y": 24
+     "y": 16
     },
     "id": 7,
     "options": {
