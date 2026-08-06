@@ -257,7 +257,7 @@
       },
       {
        "priority": 3,
-       "severity": "Average",
+       "severity": "Medium",
        "color": "rgb(255, 137, 30)",
        "show": true
       },

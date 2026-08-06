@@ -326,7 +326,7 @@
     "y": 4
    },
    "id": 6,
-   "title": "Active issues (SG) — click a row for 30-day room history",
+   "title": "Active issues (SG) \u2014 click a row for 30-day room history",
    "type": "table",
    "fieldConfig": {
     "defaults": {
@@ -387,7 +387,7 @@
             "color": "rgb(175, 180, 36)"
            },
            "3": {
-            "text": "Average",
+            "text": "Medium",
             "color": "rgb(255, 137, 30)"
            },
            "4": {
@@ -549,7 +549,7 @@
     "y": 16
    },
    "id": 8,
-   "title": "Resolved issues — within dashboard time range",
+   "title": "Resolved issues \u2014 within dashboard time range",
    "type": "table",
    "fieldConfig": {
     "defaults": {
@@ -610,7 +610,7 @@
             "color": "rgb(175, 180, 36)"
            },
            "3": {
-            "text": "Average",
+            "text": "Medium",
             "color": "rgb(255, 137, 30)"
            },
            "4": {
@@ -954,6 +954,6 @@
   ]
  },
  "timezone": "browser",
- "title": "Zoom Rooms — Singapore (POC)",
+ "title": "Zoom Rooms \u2014 Singapore (POC)",
  "uid": "zoom-sg-poc"
 }
