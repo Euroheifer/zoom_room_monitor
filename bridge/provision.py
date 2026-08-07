@@ -71,21 +71,25 @@ def get_or_create_template(api, tech_name, tg_id):
                     {"host": tech_name, "groups": [{"groupid": tg_id}]})["templateids"][0]
 
 
-def ensure_items(api, template_id, specs, history="90d"):
+def ensure_items(api, template_id, specs, history="90d", trends="365d"):
     """specs: list of (key, name, value_type). Creates missing items and keeps
-    history retention in sync on existing ones (a 30-day dashboard view needs
-    more margin than Zabbix's 31d default)."""
+    history/trends retention in sync on existing ones (30-day dashboards need
+    more history margin than Zabbix's 31d default; a year of hourly trends on
+    numeric items enables quarter-over-quarter uptime reporting)."""
     existing = {i["key_"]: i for i in api.call("item.get",
-                {"templateids": template_id, "output": ["itemid", "key_", "history"]})}
+                {"templateids": template_id, "output": ["itemid", "key_", "history", "trends"]})}
     for key, name, vtype in specs:
+        tr = trends if vtype == T_UNSIGNED else "0"  # text items have no trends
         cur = existing.get(key)
         if cur is None:
             api.call("item.create", {
                 "name": name, "key_": key, "hostid": template_id,
-                "type": TYPE_TRAPPER, "value_type": vtype, "history": history,
+                "type": TYPE_TRAPPER, "value_type": vtype,
+                "history": history, "trends": tr,
             })
-        elif cur["history"] != history:
-            api.call("item.update", {"itemid": cur["itemid"], "history": history})
+        elif cur["history"] != history or cur["trends"] != tr:
+            api.call("item.update", {"itemid": cur["itemid"],
+                                     "history": history, "trends": tr})
 
 
 def ensure_trigger(api, description, expression, priority, manual_close=0, opdata=""):

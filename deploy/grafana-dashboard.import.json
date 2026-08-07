@@ -887,6 +887,205 @@
    "type": "stat",
    "timeFrom": "15m",
    "hideTimeOverride": true
+  },
+  {
+   "type": "table",
+   "id": 9,
+   "title": "Chronic offenders \u2014 offline events in the selected time range",
+   "gridPos": {
+    "h": 8,
+    "w": 24,
+    "x": 0,
+    "y": 35
+   },
+   "datasource": {
+    "type": "alexanderzobnin-zabbix-datasource",
+    "uid": "${DS_ZABBIX}"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "cellOptions": {
+       "type": "auto"
+      },
+      "filterable": false
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Host"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Room history (30d)",
+          "url": "/d/zoom-room-detail?var-room=${__data.fields.Host:percentencode}&from=now-30d&to=now"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "cellHeight": "sm",
+    "footer": {
+     "show": false
+    },
+    "showHeader": true
+   },
+   "transformations": [
+    {
+     "id": "extractFields",
+     "options": {
+      "source": "Problems",
+      "format": "json",
+      "replace": true,
+      "jsonPaths": [
+       {
+        "path": "hosts[0].name",
+        "alias": "Host"
+       },
+       {
+        "path": "name",
+        "alias": "Problem"
+       }
+      ]
+     }
+    },
+    {
+     "id": "filterByValue",
+     "options": {
+      "type": "include",
+      "match": "all",
+      "filters": [
+       {
+        "fieldName": "Problem",
+        "config": {
+         "id": "regex",
+         "options": {
+          "value": "is offline"
+         }
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "groupBy",
+     "options": {
+      "fields": {
+       "Host": {
+        "operation": "groupby",
+        "aggregations": []
+       },
+       "Problem": {
+        "operation": "aggregate",
+        "aggregations": [
+         "count"
+        ]
+       }
+      }
+     }
+    },
+    {
+     "id": "sortBy",
+     "options": {
+      "sort": [
+       {
+        "field": "Problem (count)",
+        "desc": true
+       }
+      ]
+     }
+    },
+    {
+     "id": "limit",
+     "options": {
+      "limitField": 10
+     }
+    },
+    {
+     "id": "organize",
+     "options": {
+      "indexByName": {
+       "Host": 0,
+       "Problem (count)": 1
+      },
+      "excludeByName": {},
+      "renameByName": {
+       "Problem (count)": "Offline events"
+      }
+     }
+    }
+   ],
+   "targets": [
+    {
+     "refId": "A",
+     "queryType": "5",
+     "schema": 12,
+     "showProblems": "history",
+     "datasource": {
+      "type": "alexanderzobnin-zabbix-datasource",
+      "uid": "${DS_ZABBIX}"
+     },
+     "functions": [],
+     "evaltype": "0",
+     "application": {
+      "filter": ""
+     },
+     "group": {
+      "filter": "Rooms/Singapore"
+     },
+     "host": {
+      "filter": "/^SG-${building:regex}-${floor:regex}-/"
+     },
+     "item": {
+      "filter": ""
+     },
+     "itemTag": {
+      "filter": ""
+     },
+     "macro": {
+      "filter": ""
+     },
+     "proxy": {
+      "filter": ""
+     },
+     "tags": {
+      "filter": ""
+     },
+     "trigger": {
+      "filter": ""
+     },
+     "textFilter": "",
+     "countTriggersBy": "",
+     "options": {
+      "acknowledged": 2,
+      "count": false,
+      "disableDataAlignment": false,
+      "hostProxy": false,
+      "hostsInMaintenance": false,
+      "limit": 1001,
+      "minSeverity": 0,
+      "showDisabledItems": false,
+      "skipEmptyValues": false,
+      "sortProblems": "default",
+      "useTimeRange": true,
+      "useTrends": "default",
+      "useZabbixValueMapping": false
+     },
+     "resultFormat": "table",
+     "table": {
+      "skipEmptyValues": false
+     }
+    }
+   ]
   }
  ],
  "preload": false,
