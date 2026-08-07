@@ -437,6 +437,10 @@
         {
          "path": "name",
          "alias": "Problem"
+        },
+        {
+         "path": "opdata",
+         "alias": "Detail"
         }
        ]
       }
@@ -460,7 +464,8 @@
         "Time": 0,
         "host": 1,
         "Severity": 2,
-        "Problem": 3
+        "Problem": 3,
+        "Detail": 4
        },
        "excludeByName": {},
        "renameByName": {
@@ -664,6 +669,10 @@
         {
          "path": "name",
          "alias": "Problem"
+        },
+        {
+         "path": "opdata",
+         "alias": "Detail"
         }
        ]
       }
@@ -706,7 +715,8 @@
         "Status": 1,
         "host": 2,
         "Severity": 3,
-        "Problem": 4
+        "Problem": 4,
+        "Detail": 5
        },
        "excludeByName": {
         "Status": true

@@ -88,23 +88,24 @@ def ensure_items(api, template_id, specs, history="90d"):
             api.call("item.update", {"itemid": cur["itemid"], "history": history})
 
 
-def ensure_trigger(api, description, expression, priority, manual_close=0):
+def ensure_trigger(api, description, expression, priority, manual_close=0, opdata=""):
     """Create the template trigger, or bring an existing one's expression /
-    manual_close in line (idempotent, like ensure_items)."""
+    manual_close / opdata in line (idempotent, like ensure_items)."""
     existing = api.call("trigger.get", {"filter": {"description": description},
                                         "templated": True,  # the template's own trigger, not host-inherited copies
-                                        "output": ["triggerid", "expression", "manual_close"],
+                                        "output": ["triggerid", "expression", "manual_close", "opdata"],
                                         "expandExpression": True})
     if not existing:
         api.call("trigger.create",
                  {"description": description, "expression": expression,
-                  "priority": priority, "manual_close": manual_close})
+                  "priority": priority, "manual_close": manual_close, "opdata": opdata})
         return
     cur = existing[0]
-    if cur["expression"] != expression or int(cur.get("manual_close", 0)) != manual_close:
+    if (cur["expression"] != expression or int(cur.get("manual_close", 0)) != manual_close
+            or cur.get("opdata", "") != opdata):
         api.call("trigger.update", {"triggerid": cur["triggerid"],
                                     "expression": expression,
-                                    "manual_close": manual_close})
+                                    "manual_close": manual_close, "opdata": opdata})
 
 
 def ensure_trigger_dependency(api, template_id, description, dep_template_id, dep_description):
@@ -148,10 +149,11 @@ def build_room_template(api, tg_id):
     ensure_trigger(
         api,
         "Peripheral issue on {HOST.NAME}",
-        f'last(/{ROOM_TEMPLATE}/zoom.room.health)<>"noissue"'
-        f' and nodata(/{ROOM_TEMPLATE}/zoom.room.health,{DEVICE_STALE_WINDOW})=0',
+        f'last(/{ROOM_TEMPLATE}/zoom.room.issues)<>"none"'
+        f' and nodata(/{ROOM_TEMPLATE}/zoom.room.issues,{DEVICE_STALE_WINDOW})=0',
         SEV_AVERAGE,
         manual_close=1,
+        opdata="{ITEM.LASTVALUE1}",  # the live issue text, shown on dashboards
     )
     return tid
 
