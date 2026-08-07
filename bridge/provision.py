@@ -196,19 +196,12 @@ def build_device_template(api, tg_id):
         ("zoom.device.computer.version", "Computer app version", T_TEXT),
         ("zoom.device.controller.version", "Controller version", T_TEXT),
     ])
-    # nodata() guard: device values only refresh while a room is in the poller's
-    # detail subset, so a bare last()=0 keeps firing on stale data long after a
-    # room recovers. With the guard the alert self-clears once data goes stale.
-    # manual_close lets stale problems be closed by hand / API.
-    for role in ("computer", "controller"):
-        key = f"zoom.device.{role}.status"
-        ensure_trigger(
-            api,
-            f"{role.capitalize()} disconnected on {{HOST.NAME}}",
-            f"last(/{DEV_TEMPLATE}/{key})=0 and nodata(/{DEV_TEMPLATE}/{key},{DEVICE_STALE_WINDOW})=0",
-            SEV_AVERAGE,
-            manual_close=1,
-        )
+    # No triggers on zoom.device.*.status: the devices API's status field is
+    # unreliable (rooms Zoom itself reports healthy can carry a permanently
+    # "Offline" computer record). Device disconnects alert via the peripheral
+    # trigger on zoom.room.issues — the dashboard-metrics feed, which matches
+    # Zoom's own Room Health page. These items remain for versions + the
+    # room-detail timeline.
     return tid
 
 
@@ -348,18 +341,18 @@ def main():
     dev_tpl = build_device_template(api, tg_id)
     fleet_tpl = build_fleet_template(api, tg_id)
     ensure_fleet_host(api, hg_id, fleet_tpl)
+    # retired: devices-API status triggers (unreliable source; see build_device_template)
     for desc in ("Computer disconnected on {HOST.NAME}",
                  "Controller disconnected on {HOST.NAME}"):
-        ensure_trigger_dependency(api, dev_tpl, desc,
-                                  room_tpl, "Room {HOST.NAME} is offline")
-    # health alert defers to the more specific problems (offline dominates the
-    # dashboard-metrics 'critical' state; computer/controller have own triggers)
+        legacy = api.call("trigger.get", {"filter": {"description": desc},
+                                          "templated": True, "output": ["triggerid"]})
+        if legacy:
+            api.call("trigger.delete", [legacy[0]["triggerid"]])
+            print(f">> retired legacy trigger: {desc}")
+    # peripheral alert defers to room-offline (offline dominates the
+    # dashboard-metrics 'critical' state — one incident, one row)
     ensure_trigger_dependency(api, room_tpl, "{ITEM.LASTVALUE1}",
                               room_tpl, "Room {HOST.NAME} is offline")
-    for desc in ("Computer disconnected on {HOST.NAME}",
-                 "Controller disconnected on {HOST.NAME}"):
-        ensure_trigger_dependency(api, room_tpl, "{ITEM.LASTVALUE1}",
-                                  dev_tpl, desc)
     print(f">> templates ready (room={room_tpl}, devices={dev_tpl}, fleet={fleet_tpl})")
 
     client = ZoomClient()

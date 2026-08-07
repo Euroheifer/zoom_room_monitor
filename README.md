@@ -33,13 +33,12 @@ room, so IT sees the failure before the user does.
   room-name spelling drift.
 - ✅ **Offline detection** fleet-wide with anti-flap (2 consecutive missed polls
   → High alert, ~10 min detection at the 5-min interval).
-- ✅ **Device-disconnect detection** (room PC / controller) via a rotating
-  polling window — catches *partial* failures, with alerts suppressed while the
-  whole room is offline (one incident, one row).
-- ✅ **Peripheral health** from the Zoom dashboard metrics API (one fleet-wide
-  call per cycle): microphone / speaker / camera disconnects, controller
-  battery — alerts named by the issue text itself ("Selected microphone has
-  disconnected").
+- ✅ **Device & peripheral alerting** from the Zoom dashboard metrics API (one
+  fleet-wide call per cycle): controller disconnects, microphone / speaker /
+  camera issues, battery — alerts named by the issue text itself and sourced
+  from the same feed as Zoom's own Room Health page (the devices API's status
+  field proved unreliable, so it's history-only). Suppressed while the whole
+  room is offline — one incident, one row.
 - ✅ **Multi-region by env vars** — regions without a shared room-name prefix
   are selected by their **location-directory subtree** (that's how CNGR runs);
   each region gets its own host group, fleet rollup, and collector.
@@ -102,9 +101,10 @@ Healthy collector value (Monitoring → Latest data → `zoom.bridge.run`):
 {"rooms":135,"offline":4,"subset":15,"items":326,"failed":0}
 ```
 
-**Sizing:** keep `ceil(rooms / subset_size) × interval` under the device triggers'
-stale window (`DEVICE_STALE_WINDOW`, default 1h). 135 rooms → subset 15 sweeps in
-~45 min. At ~700 rooms: `PERIPHERAL_SUBSET_SIZE=30`, `DEVICE_STALE_WINDOW=3h`.
+**Sizing:** all alerting runs on per-cycle fleet-wide feeds, so it doesn't scale
+with room count. The rotating device sweep (`ceil(rooms / subset_size) × interval`)
+only sets how fresh the per-room device version/timeline data is — subset 15
+sweeps 135 rooms in ~45 min; at ~700 rooms use `PERIPHERAL_SUBSET_SIZE=30` (~2h).
 
 ## Project layout
 

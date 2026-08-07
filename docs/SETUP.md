@@ -83,14 +83,16 @@ Creates (idempotent — re-run any time):
 - **Template Zoom Room** — `zoom.room.status` (text) + `zoom.room.online` (1/0,
   90d history) + `zoom.room.health` / `zoom.room.issues` (dashboard-metrics
   peripheral state); trigger *"Room {HOST.NAME} is offline"* fires after **2
-  consecutive** offline polls (anti-flap), severity High; a peripheral trigger
-  **named by the live issue text** (`{ITEM.LASTVALUE1}`, e.g. *"Selected
-  microphone has disconnected"*), severity Average, dependent on the
-  offline/computer/controller triggers so it only alerts on what nothing else covers.
-- **Template Zoom Room Devices** — computer/controller status + version items;
-  disconnect triggers (severity Average — shown as **Medium** on dashboards)
-  that self-clear on stale data (`DEVICE_STALE_WINDOW`, default 1h) and
-  **depend on the room-offline trigger** (a dead room raises one alert, not three).
+  consecutive** offline polls (anti-flap), severity High; a device/peripheral
+  trigger **named by the live issue text** (`{ITEM.LASTVALUE1}`, e.g. *"Selected
+  microphone has disconnected"*, *"Controller disconnected"*), severity Average
+  (shown as **Medium**), **dependent on the room-offline trigger** (a dead room
+  raises one alert, not several).
+- **Template Zoom Room Devices** — computer/controller status + version items,
+  **history only, no triggers**: the devices API's status field is unreliable
+  (rooms Zoom itself reports healthy can carry a permanently-Offline computer
+  record), so disconnect alerting runs on the dashboard-metrics issues feed —
+  the same source as Zoom's own Room Health page.
 - **Template Zoom Fleet** — `zoom.fleet.{total,online,offline,inmeeting}`.
 - **One host per room** (both templates linked). Technical name = sanitized
   Zoom room name (data lands by it; never changes). **Visible name =
@@ -127,10 +129,11 @@ Creates on the fleet-summary host:
 
 `failed: 0` is the health signal; then spot-check a room host's `zoom.room.online`.
 
-**Sizing rule:** keep `ceil(rooms / subset_size) × interval` **below**
-`DEVICE_STALE_WINDOW`. ~700 rooms → `PERIPHERAL_SUBSET_SIZE=30`,
-`DEVICE_STALE_WINDOW=3h`, re-run Steps 4–5. Detection latency: room offline
-≈ 2 × interval; device disconnect ≤ one full sweep.
+**Sizing:** all alerting runs on per-cycle fleet-wide feeds (room list +
+metrics), so detection latency is ~one cycle for peripherals and ~2 cycles for
+offline, at any fleet size. The rotating device sweep (`ceil(rooms /
+subset_size) × interval`) only sets how fresh the per-room device
+version/timeline data is — at ~700 rooms use `PERIPHERAL_SUBSET_SIZE=30` (~2h sweep).
 
 ## Step 6 — Import the Grafana dashboards
 
