@@ -47,7 +47,8 @@
          "value": 80
         }
        ]
-      }
+      },
+      "decimals": 0
      }
     },
     "gridPos": {
@@ -137,7 +138,8 @@
          "value": 1
         }
        ]
-      }
+      },
+      "decimals": 0
      }
     },
     "gridPos": {
