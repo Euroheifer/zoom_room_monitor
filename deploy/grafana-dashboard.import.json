@@ -1089,7 +1089,7 @@
   }
  ],
  "preload": false,
- "refresh": "1m",
+ "refresh": "5m",
  "templating": {
   "list": [
    {

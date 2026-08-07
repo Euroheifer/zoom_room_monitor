@@ -11,7 +11,7 @@
    "poc"
   ],
   "schemaVersion": 42,
-  "refresh": "1m",
+  "refresh": "5m",
   "timezone": "browser",
   "time": {
    "from": "now-30d",
