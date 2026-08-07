@@ -51,7 +51,7 @@
  "panels": [
   {
    "type": "state-timeline",
-   "title": "Online / offline",
+   "title": "Room status & peripheral health",
    "id": 1,
    "gridPos": {
     "h": 6,
@@ -74,18 +74,41 @@
       {
        "type": "value",
        "options": {
-        "0": {
+        "Offline": {
          "color": "red",
          "text": "OFFLINE"
         },
-        "1": {
+        "Available": {
          "color": "green",
-         "text": "ONLINE"
+         "text": "Available"
+        },
+        "InMeeting": {
+         "color": "blue",
+         "text": "In meeting"
+        },
+        "UnderConstruction": {
+         "color": "#8e8e8e",
+         "text": "Under construction"
+        },
+        "noissue": {
+         "color": "green",
+         "text": "OK"
+        },
+        "warning": {
+         "color": "orange",
+         "text": "Warning"
+        },
+        "critical": {
+         "color": "red",
+         "text": "Critical"
+        },
+        "unknown": {
+         "color": "#8e8e8e",
+         "text": "Unknown"
         }
        }
       }
-     ],
-     "displayName": "room"
+     ]
     }
    },
    "options": {
@@ -100,7 +123,7 @@
    "targets": [
     {
      "refId": "A",
-     "queryType": "0",
+     "queryType": "2",
      "datasource": {
       "type": "alexanderzobnin-zabbix-datasource",
       "uid": "${DS_ZABBIX}"
@@ -117,7 +140,29 @@
       "filter": "$room"
      },
      "item": {
-      "filter": "Room online (1/0)"
+      "filter": "Room status (raw)"
+     }
+    },
+    {
+     "refId": "B",
+     "queryType": "2",
+     "datasource": {
+      "type": "alexanderzobnin-zabbix-datasource",
+      "uid": "${DS_ZABBIX}"
+     },
+     "functions": [],
+     "options": {},
+     "application": {
+      "filter": ""
+     },
+     "group": {
+      "filter": "/^Rooms\\//"
+     },
+     "host": {
+      "filter": "$room"
+     },
+     "item": {
+      "filter": "Room health"
      }
     }
    ]
@@ -475,5 +520,36 @@
     }
    ]
   }
- ]
+ ],
+ "annotations": {
+  "list": [
+   {
+    "name": "Problems",
+    "datasource": {
+     "type": "alexanderzobnin-zabbix-datasource",
+     "uid": "${DS_ZABBIX}"
+    },
+    "enable": true,
+    "hide": false,
+    "iconColor": "rgba(255, 96, 96, 1)",
+    "group": {
+     "filter": "/^Rooms\\//"
+    },
+    "host": {
+     "filter": "$room"
+    },
+    "application": {
+     "filter": ""
+    },
+    "trigger": {
+     "filter": ""
+    },
+    "options": {
+     "showOkEvents": true,
+     "hideAcknowledged": false,
+     "minSeverity": 0
+    }
+   }
+  ]
+ }
 }
