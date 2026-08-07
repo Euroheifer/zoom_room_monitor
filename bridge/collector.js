@@ -138,6 +138,23 @@ for (var s = 0; s < subset.length; s++) {
     for (k in dv) batch.push({ host: sanitizeHost(subset[s].name), key: k, value: String(dv[k]) });
 }
 
+// Dashboard metrics: fleet-wide per-room health + component issues (mic /
+// speaker / camera / controller) in one paged call; keep only our rooms.
+var ours = {};
+for (var o = 0; o < rooms.length; o++) ours[sanitizeHost(rooms[o].name)] = true;
+try {
+    var metrics = fetchPaged(auth, '/metrics/zoomrooms', 'zoom_rooms');
+    for (var g = 0; g < metrics.length; g++) {
+        var mh = sanitizeHost(metrics[g].room_name || '');
+        if (!ours[mh]) continue;
+        var probs = [];
+        var raw = metrics[g].issues || [];
+        for (var q = 0; q < raw.length; q++) if (raw[q]) probs.push(raw[q]);
+        batch.push({ host: mh, key: 'zoom.room.health', value: metrics[g].health || 'unknown' });
+        batch.push({ host: mh, key: 'zoom.room.issues', value: probs.length ? probs.join('; ') : 'none' });
+    }
+} catch (e) { /* metrics scope optional — room/device data still flows without it */ }
+
 var inmeeting = 0;
 for (var m = 0; m < rooms.length; m++) if (rooms[m].status === 'InMeeting') inmeeting++;
 var fleet = { 'zoom.fleet.total': rooms.length, 'zoom.fleet.offline': offline,

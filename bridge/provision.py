@@ -118,10 +118,12 @@ def ensure_trigger_dependency(api, template_id, description, dep_template_id, de
     dep = api.call("trigger.get", {"templateids": dep_template_id,
                                    "filter": {"description": dep_description},
                                    "output": ["triggerid"]})[0]
-    if any(d["triggerid"] == dep["triggerid"] for d in trig.get("dependencies", [])):
+    cur = [d["triggerid"] for d in trig.get("dependencies", [])]
+    if dep["triggerid"] in cur:
         return
     api.call("trigger.update", {"triggerid": trig["triggerid"],
-                                "dependencies": [{"triggerid": dep["triggerid"]}]})
+                                "dependencies": [{"triggerid": t}
+                                                 for t in cur + [dep["triggerid"]]]})
 
 
 # --- templates ----------------------------------------------------------------
@@ -131,12 +133,25 @@ def build_room_template(api, tg_id):
     ensure_items(api, tid, [
         ("zoom.room.status", "Room status (raw)", T_TEXT),
         ("zoom.room.online", "Room online (1/0)", T_UNSIGNED),
+        ("zoom.room.health", "Room health", T_TEXT),
+        ("zoom.room.issues", "Room issues", T_TEXT),
     ])
     ensure_trigger(
         api,
         "Room {HOST.NAME} is offline",
         f"min(/{ROOM_TEMPLATE}/zoom.room.online,#2)=0",
         SEV_HIGH,
+    )
+    # Zoom-dashboard health: mic / speaker / camera / controller issues the
+    # device polling can't see. Suppressed while the room is offline (dep in
+    # main); stale guard mirrors the device triggers.
+    ensure_trigger(
+        api,
+        "Peripheral issue on {HOST.NAME}",
+        f'last(/{ROOM_TEMPLATE}/zoom.room.health)<>"noissue"'
+        f' and nodata(/{ROOM_TEMPLATE}/zoom.room.health,{DEVICE_STALE_WINDOW})=0',
+        SEV_AVERAGE,
+        manual_close=1,
     )
     return tid
 
@@ -331,6 +346,14 @@ def main():
                  "Controller disconnected on {HOST.NAME}"):
         ensure_trigger_dependency(api, dev_tpl, desc,
                                   room_tpl, "Room {HOST.NAME} is offline")
+    # health alert defers to the more specific problems (offline dominates the
+    # dashboard-metrics 'critical' state; computer/controller have own triggers)
+    ensure_trigger_dependency(api, room_tpl, "Peripheral issue on {HOST.NAME}",
+                              room_tpl, "Room {HOST.NAME} is offline")
+    for desc in ("Computer disconnected on {HOST.NAME}",
+                 "Controller disconnected on {HOST.NAME}"):
+        ensure_trigger_dependency(api, room_tpl, "Peripheral issue on {HOST.NAME}",
+                                  dev_tpl, desc)
     print(f">> templates ready (room={room_tpl}, devices={dev_tpl}, fleet={fleet_tpl})")
 
     client = ZoomClient()

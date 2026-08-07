@@ -465,7 +465,7 @@
        "filter": "$room"
       },
       "item": {
-       "filter": "/(Room status \\(raw\\)|app version|Controller version)/"
+       "filter": "/(Room status \\(raw\\)|Room health|Room issues|app version|Controller version)/"
       }
      }
     ]
