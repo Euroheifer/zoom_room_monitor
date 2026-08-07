@@ -4,8 +4,9 @@
 
 Monitors **real Zoom Rooms** through a **Zabbix + Grafana** stack — with the poller
 running **inside Zabbix itself** (a script item), so there is no extra server,
-VM, or laptop to keep alive. Live today on **135 Singapore rooms** on company
-infrastructure; designed to scale to the ~700-room global fleet by config.
+VM, or laptop to keep alive. Live today on **159 rooms in two regions**
+(135 Singapore + 24 China/CNGR) on company infrastructure; scales to the
+~700-room global fleet by config.
 
 ![Zabbix 6.4+](https://img.shields.io/badge/Zabbix-6.4%2B-CC0000?logo=zabbix&logoColor=white)
 ![Grafana](https://img.shields.io/badge/Grafana-Zabbix_plugin-F46800?logo=grafana&logoColor=white)
@@ -35,6 +36,13 @@ room, so IT sees the failure before the user does.
 - ✅ **Device-disconnect detection** (room PC / controller) via a rotating
   polling window — catches *partial* failures, with alerts suppressed while the
   whole room is offline (one incident, one row).
+- ✅ **Peripheral health** from the Zoom dashboard metrics API (one fleet-wide
+  call per cycle): microphone / speaker / camera disconnects, controller
+  battery — alerts named by the issue text itself ("Selected microphone has
+  disconnected").
+- ✅ **Multi-region by env vars** — regions without a shared room-name prefix
+  are selected by their **location-directory subtree** (that's how CNGR runs);
+  each region gets its own host group, fleet rollup, and collector.
 - ✅ **Self-monitoring feed** — the collector reports its own cycle summary and
   a `nodata` watchdog trigger fires if it ever stops.
 - ✅ **Grafana dashboards for helpdesk**: Building/Floor filters (each team sees
@@ -84,8 +92,8 @@ cd bridge && cp .env.example .env      # fill in Zoom + Zabbix values
 ./run_install_collector.sh             # data flows within one 5-min cycle
 
 # 5. Import the dashboards into Grafana (UI: Dashboards -> New -> Import)
-#    deploy/grafana-dashboard.import.json  + deploy/grafana-room-detail.import.json
-#    — each prompts for your Zabbix datasource.
+#    upload from deploy/upload-to-grafana/ — it contains ONLY the importable
+#    files; each import prompts for your Zabbix datasource.
 ```
 
 Healthy collector value (Monitoring → Latest data → `zoom.bridge.run`):
@@ -103,7 +111,7 @@ stale window (`DEVICE_STALE_WINDOW`, default 1h). 135 rooms → subset 15 sweeps
 | Path | What's in it |
 |---|---|
 | [`bridge/`](bridge/) | `collector.js` (the in-Zabbix poller) + `install_collector.py`, `provision.py` (hosts/templates/triggers from the Zoom location directory), scope checker, and a standalone Python poller for local testing. |
-| [`deploy/`](deploy/) | Grafana dashboard JSONs (`*.import.json` = UI-importable), plus the self-contained local demo stack (Podman) and its scripts. |
+| [`deploy/`](deploy/) | Grafana dashboard JSONs — upload from [`upload-to-grafana/`](deploy/upload-to-grafana/) (importable files only) — plus the self-contained local demo stack (Podman) and its scripts. |
 | [`docs/`](docs/) | [`SETUP.md`](docs/SETUP.md) build guide · [`LOCAL-POC.md`](docs/LOCAL-POC.md) laptop demo · design specs under `docs/superpowers/specs/`. |
 
 ## Local demo mode
@@ -118,9 +126,9 @@ infrastructure: `deploy/zabbix-stack.sh up` and follow [`docs/LOCAL-POC.md`](doc
 | Done | Next (additive) |
 |---|---|
 | Offline + device-disconnect detection | Zoom webhooks (real-time events; polling stays as safety net) |
-| Singapore fleet on company Zabbix/Grafana | Remaining countries (~700 rooms) — per-region provisioning + dashboards |
-| Building/Floor helpdesk filters | Alerting to email / Teams / Slack |
-| Location-directory-driven naming | Call-quality / QSS metrics · Logitech Sync / Yealink enrichment |
+| SG + CNGR fleets on company Zabbix/Grafana | Remaining countries (~700 rooms) — per-region env config + dashboard copy |
+| Mic / speaker / camera / battery alerts (dashboard metrics API) | Alerting to email / Teams / Slack |
+| Building/Floor helpdesk filters · location-directory naming | Call-quality / QSS metrics · Logitech Sync / Yealink enrichment |
 
 ## Security
 

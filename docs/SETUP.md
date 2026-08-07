@@ -24,7 +24,7 @@ For the self-contained laptop demo (Podman stack), see
 | 3 | A **Zabbix API token** | Zabbix UI → User settings → API tokens → Create |
 | 4 | Zabbix **server** has outbound HTTPS to `zoom.us` + `api.zoom.us` | Ask the Zabbix admins — the collector runs *on the server* |
 | 5 | **Grafana** with the Zabbix app plugin + a datasource for your Zabbix | Grafana → new panel → datasource picker shows "Zabbix". If not: admin installs `alexanderzobnin-zabbix-app`, adds a datasource (URL = `<ZABBIX_URL>/api_jsonrpc.php`, an API token, *Skip TLS verify* if self-signed) |
-| 6 | A **Zoom Server-to-Server OAuth app** with read scopes: List Zoom Rooms + status, Room devices, Room locations (all **required**) | Zoom Marketplace → Develop → Build App. Note the **Account ID / Client ID / Client Secret** |
+| 6 | A **Zoom Server-to-Server OAuth app** with read scopes: List Zoom Rooms + status, Room devices, Room locations (all **required**); **Dashboard** (`dashboard_zr:read:admin`) for mic/speaker/camera/battery health (strongly recommended — collector degrades gracefully without it) | Zoom Marketplace → Develop → Build App. Note the **Account ID / Client ID / Client Secret** |
 | 7 | Any machine with **Python 3.11+** and `git` for the one-time setup | Nothing keeps running on it afterwards |
 | 8 | Zoom **location directory** populated: every room on a floor, floors under buildings/campuses | Zoom admin portal → Rooms → Location directory. "Unassigned Rooms" should be 0 — this drives the Building/Floor filters |
 
@@ -44,7 +44,12 @@ ZBX_API_URL=https://<your-zabbix>/api_jsonrpc.php
 ZBX_API_TOKEN=<your Zabbix API token>
 ZBX_TRAPPER_HOST=<your-zabbix-host>                   # only for optional manual testing
 ZBX_SSL_VERIFY=false                                  # only if the cert chain is self-signed
-REGION_PREFIX=SG                                      # your rooms' name prefix
+REGION_PREFIX=SG                                      # region code: name prefix + host/dashboard naming
+# When rooms DON'T share a name prefix, select them by location-directory
+# subtree instead (this is how CNGR runs):
+#LOCATION_ROOT=CNGR                                   # directory node name
+#HOST_GROUP=Rooms/CNGR                                # Zabbix host group (default Rooms/Singapore)
+#STRIP_CAMPUS_PREFIX=0                                # keep city-prefixed campus names (BJ-JinHui)
 ```
 
 ## Step 2 — Gate check: Zoom scopes
@@ -76,8 +81,12 @@ Creates (idempotent — re-run any time):
 
 - Host group **`Rooms/<Region>`**, template group **`Templates/Zoom`**.
 - **Template Zoom Room** — `zoom.room.status` (text) + `zoom.room.online` (1/0,
-  90d history); trigger *"Room {HOST.NAME} is offline"* fires after **2
-  consecutive** offline polls (anti-flap), severity High.
+  90d history) + `zoom.room.health` / `zoom.room.issues` (dashboard-metrics
+  peripheral state); trigger *"Room {HOST.NAME} is offline"* fires after **2
+  consecutive** offline polls (anti-flap), severity High; a peripheral trigger
+  **named by the live issue text** (`{ITEM.LASTVALUE1}`, e.g. *"Selected
+  microphone has disconnected"*), severity Average, dependent on the
+  offline/computer/controller triggers so it only alerts on what nothing else covers.
 - **Template Zoom Room Devices** — computer/controller status + version items;
   disconnect triggers (severity Average — shown as **Medium** on dashboards)
   that self-clear on stale data (`DEVICE_STALE_WINDOW`, default 1h) and
@@ -103,8 +112,10 @@ Creates on the fleet-summary host:
 
 - **Script item `zoom.bridge.run`** (`bridge/collector.js`, interval **300s**,
   timeout 60s). Each cycle: Zoom OAuth → `GET /rooms` → `GET /rooms/{id}/devices`
-  for a rotating **15-room window** over the online fleet → fleet rollups → one
-  `history.push` call feeding the trapper items.
+  for a rotating **15-room window** over the online fleet → `GET
+  /metrics/zoomrooms` (fleet-wide peripheral health, best-effort if the
+  Dashboard scope is missing) → fleet rollups → one `history.push` call
+  feeding the trapper items.
 - **Credential macros** `{$ZOOM.*}` / `{$ZOOM.ZBX.*}` (secrets as secret macros).
 - **Watchdog trigger** *"Zoom collector stopped reporting"* (`nodata 10m`, High).
 
@@ -124,13 +135,18 @@ Creates on the fleet-summary host:
 ## Step 6 — Import the Grafana dashboards
 
 Grafana → **Dashboards → New → Import → Upload JSON file**, once per file
-(accept "overwrite" on re-imports); each prompts for your Zabbix datasource:
+(accept "overwrite" on re-imports); each prompts for your Zabbix datasource.
+**Upload from `deploy/upload-to-grafana/`** — that folder contains only the
+importable files (symlinks, always current), so there is no wrong file to pick:
 
-1. `deploy/grafana-dashboard.import.json` — fleet dashboard: Building/Floor
+1. `grafana-dashboard.import.json` — SG fleet dashboard: Building/Floor
    filters, filtered Online/Offline stats, fleet offline trend, **Active
-   issues** (rows disappear on recovery), status grid (red = offline,
-   click-through), **Resolved issues** within the time range.
-2. `deploy/grafana-room-detail.import.json` — per-room 30-day drill-down.
+   issues** (rows disappear on recovery; peripheral rows named by the issue
+   text), status grid (red = offline, click-through), **Resolved issues**
+   within the time range.
+2. `grafana-dashboard-cngr.import.json` — same layout for the CNGR fleet.
+3. `grafana-room-detail.import.json` — per-room 30-day drill-down (region-agnostic,
+   shared by all fleet dashboards; shows last-known status/health/issues/versions).
 
 **Verify:** Online + Offline = your room count; picking one building shrinks
 all panels; clicking a room tile opens its 30-day detail.
@@ -145,12 +161,16 @@ repo** (Share → Export) so git stays the source of truth.
 
 ## Setting up another country
 
-1. `REGION_PREFIX=TH` in `.env` (rooms named `TH-…`, present in the location
-   directory). Adjust the host-group name in `provision.py` (currently
-   `Rooms/Singapore`).
+Pure env config — no code changes (CNGR is the live example):
+
+1. In `.env`: `REGION_PREFIX=TH` and `HOST_GROUP=Rooms/TH`. If the region's
+   rooms share a name prefix, that's enough; if not, add `LOCATION_ROOT=<directory
+   node name>` to select by location subtree, and `STRIP_CAMPUS_PREFIX=0` if
+   campus names carry meaningful prefixes (cities).
 2. Run Steps 4–5 — separate host group, fleet host, and collector per region.
-3. Copy the fleet dashboard JSON: swap group filter, `SG-` regex prefixes,
-   title, and `uid`; import. The room-detail dashboard is region-agnostic.
+3. Copy the fleet dashboard JSON: swap group filter, region regex prefixes,
+   title, and `uid`; import (see `deploy/grafana-dashboard-cngr.json` for a
+   worked example). The room-detail dashboard needs no copy.
 
 ## Routine operations
 
