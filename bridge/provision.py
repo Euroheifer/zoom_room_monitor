@@ -148,7 +148,7 @@ def build_room_template(api, tg_id):
     # main); stale guard mirrors the device triggers.
     ensure_trigger(
         api,
-        "Peripheral issue on {HOST.NAME}",
+        "{ITEM.LASTVALUE1}",
         f'last(/{ROOM_TEMPLATE}/zoom.room.issues)<>"none"'
         f' and nodata(/{ROOM_TEMPLATE}/zoom.room.issues,{DEVICE_STALE_WINDOW})=0',
         SEV_AVERAGE,
@@ -350,11 +350,11 @@ def main():
                                   room_tpl, "Room {HOST.NAME} is offline")
     # health alert defers to the more specific problems (offline dominates the
     # dashboard-metrics 'critical' state; computer/controller have own triggers)
-    ensure_trigger_dependency(api, room_tpl, "Peripheral issue on {HOST.NAME}",
+    ensure_trigger_dependency(api, room_tpl, "{ITEM.LASTVALUE1}",
                               room_tpl, "Room {HOST.NAME} is offline")
     for desc in ("Computer disconnected on {HOST.NAME}",
                  "Controller disconnected on {HOST.NAME}"):
-        ensure_trigger_dependency(api, room_tpl, "Peripheral issue on {HOST.NAME}",
+        ensure_trigger_dependency(api, room_tpl, "{ITEM.LASTVALUE1}",
                                   dev_tpl, desc)
     print(f">> templates ready (room={room_tpl}, devices={dev_tpl}, fleet={fleet_tpl})")
 
