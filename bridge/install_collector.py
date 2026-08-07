@@ -10,7 +10,8 @@ import pathlib
 
 from zabbix_client import ZabbixAPI
 
-HOST = "SG-Fleet-Summary"
+REGION = os.environ.get("REGION_PREFIX", "SG")
+HOST = f"{REGION}-Fleet-Summary"
 KEY = "zoom.bridge.run"
 SCRIPT = (pathlib.Path(__file__).parent / "collector.js").read_text()
 
@@ -28,7 +29,9 @@ PARAMETERS = [
     {"name": "client_secret", "value": "{$ZOOM.CLIENT.SECRET}"},
     {"name": "zbx_url", "value": "{$ZOOM.ZBX.URL}"},
     {"name": "zbx_token", "value": "{$ZOOM.ZBX.TOKEN}"},
-    {"name": "region", "value": os.environ.get("REGION_PREFIX", "SG")},
+    {"name": "region", "value": REGION},
+    {"name": "location_root", "value": os.environ.get("LOCATION_ROOT", "")},
+    {"name": "fleet_host", "value": HOST},
     # subset/interval sizing: keep ceil(rooms/subset)*interval under the device
     # triggers' DEVICE_STALE_WINDOW (see provision.py). 15 per 5m cycle sweeps
     # 135 SG rooms in ~45m; at 700 rooms use subset 30 + a 3h window.

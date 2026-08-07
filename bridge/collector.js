@@ -14,7 +14,8 @@ var p = JSON.parse(value);
 var SUBSET = parseInt(p.subset_size || '10', 10);
 var INTERVAL = parseInt(p.interval || '120', 10);
 var REGION = (p.region || 'SG').toUpperCase();
-var FLEET_HOST = 'SG-Fleet-Summary';
+var LOCATION_ROOT = p.location_root || '';  // select rooms by directory subtree instead of name prefix
+var FLEET_HOST = p.fleet_host || (REGION + '-Fleet-Summary');
 
 function getJson(url, headers) {
     var req = new HttpRequest();
@@ -41,17 +42,44 @@ function sanitizeHost(name) {
         .replace(/^\s+|\s+$/g, '');
 }
 
-function fetchRegionRooms(auth) {
-    var rooms = [], tok = '';
+function fetchPaged(auth, path, listKey) {
+    var out = [], tok = '';
     while (true) {
-        var url = 'https://api.zoom.us/v2/rooms?page_size=300' + (tok ? '&next_page_token=' + tok : '');
+        var url = 'https://api.zoom.us/v2' + path + '?page_size=300' + (tok ? '&next_page_token=' + tok : '');
         var r = getJson(url, [auth]);
-        rooms = rooms.concat(r.rooms || []);
+        out = out.concat(r[listKey] || []);
         tok = r.next_page_token || '';
         if (!tok) break;
     }
-    var out = [];
-    for (var i = 0; i < rooms.length; i++)
+    return out;
+}
+
+// All location ids at or under the directory node named LOCATION_ROOT.
+function locationSubtree(auth) {
+    var locs = fetchPaged(auth, '/rooms/locations', 'locations');
+    var sub = {}, i, changed = true;
+    for (i = 0; i < locs.length; i++)
+        if (locs[i].name === LOCATION_ROOT) sub[locs[i].id] = true;
+    while (changed) {
+        changed = false;
+        for (i = 0; i < locs.length; i++)
+            if (!sub[locs[i].id] && sub[locs[i].parent_location_id]) {
+                sub[locs[i].id] = true; changed = true;
+            }
+    }
+    return sub;
+}
+
+function fetchRegionRooms(auth) {
+    var rooms = fetchPaged(auth, '/rooms', 'rooms');
+    var out = [], i;
+    if (LOCATION_ROOT) {
+        var sub = locationSubtree(auth);
+        for (i = 0; i < rooms.length; i++)
+            if (sub[rooms[i].location_id]) out.push(rooms[i]);
+        return out;
+    }
+    for (i = 0; i < rooms.length; i++)
         if ((rooms[i].name || '').toUpperCase().indexOf(REGION) === 0) out.push(rooms[i]);
     return out;
 }

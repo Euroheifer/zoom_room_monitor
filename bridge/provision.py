@@ -22,6 +22,14 @@ from zabbix_client import ZabbixAPI
 from mapper import sanitize_host_name, parse_tags
 
 REGION_PREFIX = os.environ.get("REGION_PREFIX", "SG")
+# Room selection: by name prefix (REGION_PREFIX) by default, or — when rooms
+# don't share a name prefix (e.g. CNGR = CNBJ-/CNSH-) — by location-directory
+# subtree: set LOCATION_ROOT to the directory node name (e.g. "CNGR").
+LOCATION_ROOT = os.environ.get("LOCATION_ROOT", "")
+HOST_GROUP = os.environ.get("HOST_GROUP", "Rooms/Singapore")
+# Campus names like SGP-GLX carry a redundant site prefix; CNGR campuses like
+# BJ-JinHui carry the CITY, which must be kept. Set 0 to keep the full name.
+STRIP_CAMPUS_PREFIX = os.environ.get("STRIP_CAMPUS_PREFIX", "1") == "1"
 # Must exceed the device sweep time: ceil(rooms/subset) * poll interval.
 # 135 rooms / 15 per 5m cycle ~= 45m -> 1h. At the 700-room final design,
 # raise to 3h (subset 30 -> ~2h sweep).
@@ -30,8 +38,8 @@ DEVICE_STALE_WINDOW = os.environ.get("DEVICE_STALE_WINDOW", "1h")
 ROOM_TEMPLATE = "Template Zoom Room"
 DEV_TEMPLATE = "Template Zoom Room Devices"
 FLEET_TEMPLATE = "Template Zoom Fleet"
-FLEET_HOST_TECH = "SG-Fleet-Summary"
-FLEET_HOST_NAME = "SG Fleet Summary"
+FLEET_HOST_TECH = f"{REGION_PREFIX}-Fleet-Summary"
+FLEET_HOST_NAME = f"{REGION_PREFIX} Fleet Summary"
 
 # Zabbix value types
 T_UNSIGNED, T_TEXT = 3, 4
@@ -218,7 +226,8 @@ def location_tags(room, locs):
         if loc.get("type") == "floor":
             out["floor"] = loc["name"].replace("-", " ").strip()
         elif loc.get("type") == "campus":
-            out["building"] = _CAMPUS_PREFIX.sub("", loc["name"]).replace("-", " ").strip()
+            name = _CAMPUS_PREFIX.sub("", loc["name"]) if STRIP_CAMPUS_PREFIX else loc["name"]
+            out["building"] = name.replace("-", " ").strip()
         lid = loc.get("parent_location_id")
     return out
 
@@ -231,6 +240,10 @@ def canonical_room_name(room, tech, locs):
     if "building" not in loc or "floor" not in loc:
         return room["name"], loc
     leaf = re.sub(rf"^{REGION_PREFIX}-[^-]+-[^-]+-", "", room["name"]).strip()
+    if leaf == room["name"] and "-" in leaf:
+        # name doesn't follow the {REGION}-b-f- convention (e.g. CNBJ-JL_26F):
+        # keep only the last dash-segment, the room's own identifier.
+        leaf = leaf.rsplit("-", 1)[-1].strip()
     if not leaf:
         leaf = room["name"]
     if over:  # don't leak the raw name through the leaf (e.g. "SG-Office")
@@ -240,7 +253,20 @@ def canonical_room_name(room, tech, locs):
 
 # --- hosts --------------------------------------------------------------------
 
-def fetch_region_rooms(client):
+def location_subtree(locs, root_name):
+    """All location ids at or under the directory node named root_name."""
+    sub = {lid for lid, l in locs.items() if l["name"] == root_name}
+    if not sub:
+        raise SystemExit(f"location '{root_name}' not found in the Zoom directory")
+    while True:
+        more = {lid for lid, l in locs.items()
+                if lid not in sub and l.get("parent_location_id") in sub}
+        if not more:
+            return sub
+        sub |= more
+
+
+def fetch_region_rooms(client, locs=None):
     rooms, tok = [], None
     while True:
         params = {"page_size": 300}
@@ -251,6 +277,9 @@ def fetch_region_rooms(client):
         tok = r.get("next_page_token") or ""
         if not tok:
             break
+    if LOCATION_ROOT:
+        sub = location_subtree(locs, LOCATION_ROOT)
+        return [x for x in rooms if x.get("location_id") in sub]
     return [x for x in rooms if x.get("name", "").upper().startswith(REGION_PREFIX.upper())]
 
 
@@ -292,7 +321,7 @@ def main():
     api.login()
     print(">> Zabbix login OK")
 
-    hg_id = get_or_create_hostgroup(api, "Rooms/Singapore")
+    hg_id = get_or_create_hostgroup(api, HOST_GROUP)
     tg_id = get_or_create_templategroup(api, "Templates/Zoom")
     room_tpl = build_room_template(api, tg_id)
     dev_tpl = build_device_template(api, tg_id)
@@ -305,8 +334,8 @@ def main():
     print(f">> templates ready (room={room_tpl}, devices={dev_tpl}, fleet={fleet_tpl})")
 
     client = ZoomClient()
-    rooms = fetch_region_rooms(client)
     locs = fetch_locations(client)
+    rooms = fetch_region_rooms(client, locs)
     print(f">> {len(rooms)} {REGION_PREFIX} rooms from Zoom, {len(locs)} directory locations")
 
     created, renamed, linked = ensure_hosts(api, rooms, locs, hg_id, room_tpl, dev_tpl)

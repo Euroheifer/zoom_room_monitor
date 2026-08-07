@@ -29,7 +29,7 @@
      },
      "query": {
       "queryType": "host",
-      "group": "Rooms/Singapore",
+      "group": "/^Rooms\\//",
       "host": "/.*/",
       "application": "",
       "itemTag": "",
@@ -106,7 +106,7 @@
        "filter": ""
       },
       "group": {
-       "filter": "Rooms/Singapore"
+       "filter": "/^Rooms\\//"
       },
       "host": {
        "filter": "$room"
@@ -180,7 +180,7 @@
        "filter": ""
       },
       "group": {
-       "filter": "Rooms/Singapore"
+       "filter": "/^Rooms\\//"
       },
       "host": {
        "filter": "$room"
@@ -291,7 +291,7 @@
        "filter": ""
       },
       "group": {
-       "filter": "Rooms/Singapore"
+       "filter": "/^Rooms\\//"
       },
       "host": {
        "filter": "$room"
@@ -400,7 +400,7 @@
        "filter": ""
       },
       "group": {
-       "filter": "Rooms/Singapore"
+       "filter": "/^Rooms\\//"
       },
       "host": {
        "filter": "$room"
@@ -459,7 +459,7 @@
        "filter": ""
       },
       "group": {
-       "filter": "Rooms/Singapore"
+       "filter": "/^Rooms\\//"
       },
       "host": {
        "filter": "$room"
