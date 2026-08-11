@@ -113,7 +113,7 @@
     ],
     "title": "Online",
     "type": "stat",
-    "timeFrom": "1h",
+    "timeFrom": "15m",
     "hideTimeOverride": true
    },
    {
@@ -238,7 +238,7 @@
     ],
     "title": "Offline now",
     "type": "stat",
-    "timeFrom": "1h",
+    "timeFrom": "15m",
     "hideTimeOverride": true
    },
    {
@@ -518,7 +518,7 @@
        "disableDataAlignment": false,
        "hostProxy": false,
        "hostsInMaintenance": false,
-       "limit": 1001,
+       "limit": 200,
        "minSeverity": 0,
        "showDisabledItems": false,
        "skipEmptyValues": false,
@@ -766,7 +766,7 @@
        "disableDataAlignment": false,
        "hostProxy": false,
        "hostsInMaintenance": false,
-       "limit": 1001,
+       "limit": 200,
        "minSeverity": 0,
        "showDisabledItems": false,
        "skipEmptyValues": false,
@@ -1066,7 +1066,7 @@
        "disableDataAlignment": false,
        "hostProxy": false,
        "hostsInMaintenance": false,
-       "limit": 1001,
+       "limit": 200,
        "minSeverity": 0,
        "showDisabledItems": false,
        "skipEmptyValues": false,

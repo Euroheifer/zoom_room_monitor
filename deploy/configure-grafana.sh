@@ -38,7 +38,7 @@ curl -s -X POST "$GF/api/datasources" -H "Content-Type: application/json" -d "{
   \"access\":\"proxy\",
   \"url\":\"${ZBX_API_URL}\",
   \"isDefault\":true,
-  \"jsonData\":{\"username\":\"${ZBX_USER}\",\"authType\":\"userLogin\",\"trends\":true,\"trendsFrom\":\"7d\",\"trendsRange\":\"4d\",\"cacheTTL\":\"1m\"},
+  \"jsonData\":{\"username\":\"${ZBX_USER}\",\"authType\":\"userLogin\",\"trends\":true,\"trendsFrom\":\"6h\",\"trendsRange\":\"4d\",\"cacheTTL\":\"5m\"},
   \"secureJsonData\":{\"password\":\"${ZBX_PASS}\"}
 }" >/dev/null
 

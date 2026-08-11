@@ -10,7 +10,7 @@
  ],
  "editable": true,
  "uid": "zoom-room-detail",
- "title": "Zoom Room \u2014 Detail",
+ "title": "Zoom Room — Detail",
  "tags": [
   "zoom",
   "poc"
@@ -372,7 +372,7 @@
       "disableDataAlignment": false,
       "hostProxy": false,
       "hostsInMaintenance": false,
-      "limit": 1001,
+      "limit": 200,
       "minSeverity": 0,
       "showDisabledItems": false,
       "skipEmptyValues": false,
@@ -390,7 +390,7 @@
   },
   {
    "type": "state-timeline",
-   "title": "Devices \u2014 computer / controller",
+   "title": "Devices — computer / controller",
    "description": "Device status is collected by a rotating window over the ONLINE fleet (~10 rooms per cycle, full sweep ~26 min); offline rooms are skipped since their devices are known-dead. Gaps mean the room was offline or between sweep visits, not that the devices were down.",
    "id": 4,
    "gridPos": {

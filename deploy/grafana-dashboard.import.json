@@ -118,7 +118,7 @@
    ],
    "title": "Online",
    "type": "stat",
-   "timeFrom": "1h",
+   "timeFrom": "15m",
    "hideTimeOverride": true
   },
   {
@@ -243,7 +243,7 @@
    ],
    "title": "Offline now",
    "type": "stat",
-   "timeFrom": "1h",
+   "timeFrom": "15m",
    "hideTimeOverride": true
   },
   {
@@ -328,7 +328,7 @@
     "y": 4
    },
    "id": 6,
-   "title": "Active issues (SG) \u2014 click a row for 30-day room history",
+   "title": "Active issues (SG) — click a row for 30-day room history",
    "type": "table",
    "fieldConfig": {
     "defaults": {
@@ -523,7 +523,7 @@
       "disableDataAlignment": false,
       "hostProxy": false,
       "hostsInMaintenance": false,
-      "limit": 1001,
+      "limit": 200,
       "minSeverity": 0,
       "showDisabledItems": false,
       "skipEmptyValues": false,
@@ -551,7 +551,7 @@
     "y": 27
    },
    "id": 8,
-   "title": "Resolved issues \u2014 within dashboard time range",
+   "title": "Resolved issues — within dashboard time range",
    "type": "table",
    "fieldConfig": {
     "defaults": {
@@ -771,7 +771,7 @@
       "disableDataAlignment": false,
       "hostProxy": false,
       "hostsInMaintenance": false,
-      "limit": 1001,
+      "limit": 200,
       "minSeverity": 0,
       "showDisabledItems": false,
       "skipEmptyValues": false,
@@ -891,7 +891,7 @@
   {
    "type": "table",
    "id": 9,
-   "title": "Chronic offenders \u2014 offline events in the selected time range",
+   "title": "Chronic offenders — offline events in the selected time range",
    "gridPos": {
     "h": 8,
     "w": 24,
@@ -1071,7 +1071,7 @@
       "disableDataAlignment": false,
       "hostProxy": false,
       "hostsInMaintenance": false,
-      "limit": 1001,
+      "limit": 200,
       "minSeverity": 0,
       "showDisabledItems": false,
       "skipEmptyValues": false,
@@ -1170,6 +1170,6 @@
   ]
  },
  "timezone": "browser",
- "title": "Zoom Rooms \u2014 Singapore (POC)",
+ "title": "Zoom Rooms — Singapore (POC)",
  "uid": "zoom-sg-poc"
 }
