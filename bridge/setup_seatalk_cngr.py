@@ -46,9 +46,9 @@ _ANCHOR = "var email_list;"
 assert _ANCHOR in script, "source media type script changed — check _ANCHOR"
 script = script.replace(
     _ANCHOR,
-    'params.alert_message = params.alert_message.split("; ").join("\\n");\n'
+    'params.alert_message = params.alert_message.split("; ").join("\\n- ");\n'
     # dashboards label Zabbix severity 3 "Medium"; keep chat wording identical
-    'params.alert_message = params.alert_message.replace("Severity: Average", "Severity: Medium");\n'
+    'params.alert_message = params.alert_message.replace("**Severity:** Average", "**Severity:** Medium");\n'
     # green circle on recovery, red on High+, yellow below (emoji as JS escapes)
     'params.alert_subject = (params.event_value === "0" ? "\\ud83d\\udfe2" : '
     '(parseInt(params.nseverity, 10) >= 4 ? "\\ud83d\\udd34" : "\\ud83d\\udfe1")) + '
@@ -59,11 +59,12 @@ script = script.replace(
 OVERRIDES = {
     # emoji prefix (yellow/red/green by severity + state) is added by the JS below
     # no event timestamp: the chat bubble's own time is within one 5-min poll
-    # of the event and renders in each viewer's timezone
-    ('0', '0'): {"subject": "{HOST.NAME}",
-                 "message": "\nSeverity: {EVENT.SEVERITY}\n\nIssue:\n{EVENT.NAME}"},
-    ('0', '1'): {"subject": "{HOST.NAME}",
-                 "message": "\nResolved after {EVENT.DURATION}\n\nIssue:\n{EVENT.NAME}"},
+    # of the event and renders in each viewer's timezone.
+    # SeaTalk renders markdown when the webhook payload has format:1 (house default)
+    ('0', '0'): {"subject": "**{HOST.NAME}**",
+                 "message": "\n**Severity:** {EVENT.SEVERITY}\n\n**Issue:**\n- {EVENT.NAME}"},
+    ('0', '1'): {"subject": "**{HOST.NAME}**",
+                 "message": "\n**Resolved after** {EVENT.DURATION}\n\n**Issue:**\n- {EVENT.NAME}"},
 }
 
 existing = rpc('mediatype.get', {"filter": {"name": "Seatalk-ZoomRooms-CNGR"},
