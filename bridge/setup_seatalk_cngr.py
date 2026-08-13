@@ -46,16 +46,21 @@ _ANCHOR = "var email_list;"
 assert _ANCHOR in script, "source media type script changed — check _ANCHOR"
 script = script.replace(
     _ANCHOR,
-    'params.alert_message = params.alert_message.split("; ").join(";\\n");\n'
+    'params.alert_message = params.alert_message.split("; ").join("\\n");\n'
     # dashboards label Zabbix severity 3 "Medium"; keep chat wording identical
-    'params.alert_message = params.alert_message.replace("Severity: Average", "Severity: Medium");\n\n'
+    'params.alert_message = params.alert_message.replace("Severity: Average", "Severity: Medium");\n'
+    # green circle on recovery, red on High+, yellow below (emoji as JS escapes)
+    'params.alert_subject = (params.event_value === "0" ? "\\ud83d\\udfe2" : '
+    '(parseInt(params.nseverity, 10) >= 4 ? "\\ud83d\\udd34" : "\\ud83d\\udfe1")) + '
+    '" " + params.alert_subject;\n\n'
     + _ANCHOR)
 
 # compact chat-friendly templates (house ones repeat the problem name 3x)
 OVERRIDES = {
-    ('0', '0'): {"subject": "🔴 {HOST.NAME}",
+    # emoji prefix (yellow/red/green by severity + state) is added by the JS below
+    ('0', '0'): {"subject": "{HOST.NAME}",
                  "message": "\nSeverity: {EVENT.SEVERITY} · since {EVENT.TIME} {EVENT.DATE}\n\nIssue:\n{EVENT.NAME}"},
-    ('0', '1'): {"subject": "🟢 {HOST.NAME}",
+    ('0', '1'): {"subject": "{HOST.NAME}",
                  "message": "\nResolved after {EVENT.DURATION}\n\nIssue:\n{EVENT.NAME}"},
 }
 
@@ -70,7 +75,9 @@ else:
         "script": script,
         "description": "Zoom Room monitor -> SeaTalk group 'CNGR Zoom Room Alerts'. "
                        "Cloned from 'Seatalk' (id 42). Owner: luhl@sea.com",
-        "parameters": [{"name": p["name"], "value": p["value"]} for p in src["parameters"]],
+        "parameters": [{"name": p["name"], "value": p["value"]} for p in src["parameters"]]
+                      + [{"name": "nseverity", "value": "{EVENT.NSEVERITY}"},
+                         {"name": "event_value", "value": "{EVENT.VALUE}"}],
         "message_templates": [
             {**{k: t[k] for k in ("eventsource", "recovery", "subject", "message")},
              **OVERRIDES.get((t["eventsource"], t["recovery"]), {})}
