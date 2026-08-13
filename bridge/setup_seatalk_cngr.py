@@ -46,7 +46,10 @@ _ANCHOR = "var email_list;"
 assert _ANCHOR in script, "source media type script changed — check _ANCHOR"
 script = script.replace(
     _ANCHOR,
-    'params.alert_message = params.alert_message.split("; ").join(";\\n");\n\n' + _ANCHOR)
+    'params.alert_message = params.alert_message.split("; ").join(";\\n");\n'
+    # dashboards label Zabbix severity 3 "Medium"; keep chat wording identical
+    'params.alert_message = params.alert_message.replace("Severity: Average", "Severity: Medium");\n\n'
+    + _ANCHOR)
 
 # compact chat-friendly templates (house ones repeat the problem name 3x)
 OVERRIDES = {
