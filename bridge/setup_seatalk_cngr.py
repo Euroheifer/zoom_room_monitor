@@ -42,6 +42,14 @@ src = rpc('mediatype.get', {"mediatypeids": [SRC_MEDIATYPE], "output": "extend",
 script = src['script'].replace(SRC_HOOK, NEW_HOOK)
 assert NEW_HOOK in script, "source media type script changed — check SRC_HOOK"
 
+# compact chat-friendly templates (house ones repeat the problem name 3x)
+OVERRIDES = {
+    ('0', '0'): {"subject": "🔴 {HOST.NAME}",
+                 "message": "{EVENT.NAME}\nSeverity: {EVENT.SEVERITY} · since {EVENT.TIME} {EVENT.DATE}"},
+    ('0', '1'): {"subject": "🟢 {HOST.NAME}",
+                 "message": "Resolved after {EVENT.DURATION}: {EVENT.NAME}"},
+}
+
 existing = rpc('mediatype.get', {"filter": {"name": "Seatalk-ZoomRooms-CNGR"},
                                  "output": ["mediatypeid"]})
 if existing:
@@ -54,8 +62,10 @@ else:
         "description": "Zoom Room monitor -> SeaTalk group 'CNGR Zoom Room Alerts'. "
                        "Cloned from 'Seatalk' (id 42). Owner: luhl@sea.com",
         "parameters": [{"name": p["name"], "value": p["value"]} for p in src["parameters"]],
-        "message_templates": [{k: t[k] for k in ("eventsource", "recovery", "subject", "message")}
-                              for t in src["message_templates"]],
+        "message_templates": [
+            {**{k: t[k] for k in ("eventsource", "recovery", "subject", "message")},
+             **OVERRIDES.get((t["eventsource"], t["recovery"]), {})}
+            for t in src["message_templates"]],
     })['mediatypeids'][0]
     print("media type created:", mtid)
 
