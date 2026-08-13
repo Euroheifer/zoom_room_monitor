@@ -41,13 +41,19 @@ src = rpc('mediatype.get', {"mediatypeids": [SRC_MEDIATYPE], "output": "extend",
                             "selectMessageTemplates": "extend"})[0]
 script = src['script'].replace(SRC_HOOK, NEW_HOOK)
 assert NEW_HOOK in script, "source media type script changed — check SRC_HOOK"
+# one issue per line in chat: {EVENT.NAME} joins issues with "; ", macros can't split it
+_ANCHOR = "var email_list;"
+assert _ANCHOR in script, "source media type script changed — check _ANCHOR"
+script = script.replace(
+    _ANCHOR,
+    'params.alert_message = params.alert_message.split("; ").join(";\\n");\n\n' + _ANCHOR)
 
 # compact chat-friendly templates (house ones repeat the problem name 3x)
 OVERRIDES = {
     ('0', '0'): {"subject": "🔴 {HOST.NAME}",
-                 "message": "{EVENT.NAME}\nSeverity: {EVENT.SEVERITY} · since {EVENT.TIME} {EVENT.DATE}"},
+                 "message": "\nSeverity: {EVENT.SEVERITY} · since {EVENT.TIME} {EVENT.DATE}\n\nIssue:\n{EVENT.NAME}"},
     ('0', '1'): {"subject": "🟢 {HOST.NAME}",
-                 "message": "Resolved after {EVENT.DURATION}: {EVENT.NAME}"},
+                 "message": "\nResolved after {EVENT.DURATION}\n\nIssue:\n{EVENT.NAME}"},
 }
 
 existing = rpc('mediatype.get', {"filter": {"name": "Seatalk-ZoomRooms-CNGR"},
