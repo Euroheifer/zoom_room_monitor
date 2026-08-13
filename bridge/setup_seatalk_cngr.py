@@ -58,8 +58,10 @@ script = script.replace(
 # compact chat-friendly templates (house ones repeat the problem name 3x)
 OVERRIDES = {
     # emoji prefix (yellow/red/green by severity + state) is added by the JS below
+    # no event timestamp: the chat bubble's own time is within one 5-min poll
+    # of the event and renders in each viewer's timezone
     ('0', '0'): {"subject": "{HOST.NAME}",
-                 "message": "\nSeverity: {EVENT.SEVERITY} · since {EVENT.TIME} {EVENT.DATE}\n\nIssue:\n{EVENT.NAME}"},
+                 "message": "\nSeverity: {EVENT.SEVERITY}\n\nIssue:\n{EVENT.NAME}"},
     ('0', '1'): {"subject": "{HOST.NAME}",
                  "message": "\nResolved after {EVENT.DURATION}\n\nIssue:\n{EVENT.NAME}"},
 }
