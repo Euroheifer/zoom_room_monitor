@@ -140,8 +140,13 @@ for (var s = 0; s < subset.length; s++) {
 
 // Dashboard metrics: fleet-wide per-room health + component issues (mic /
 // speaker / camera / controller) in one paged call; keep only our rooms.
-var ours = {};
-for (var o = 0; o < rooms.length; o++) ours[sanitizeHost(rooms[o].name)] = true;
+var ours = {}, uc = {};
+for (var o = 0; o < rooms.length; o++) {
+    var oh = sanitizeHost(rooms[o].name);
+    ours[oh] = true;
+    // rooms marked Under Construction in Zoom admin: suppress issue alerts
+    if (rooms[o].status === 'UnderConstruction') uc[oh] = true;
+}
 try {
     var metrics = fetchPaged(auth, '/metrics/zoomrooms', 'zoom_rooms');
     for (var g = 0; g < metrics.length; g++) {
@@ -151,7 +156,7 @@ try {
         var raw = metrics[g].issues || [];
         for (var q = 0; q < raw.length; q++) if (raw[q]) probs.push(raw[q]);
         batch.push({ host: mh, key: 'zoom.room.health', value: metrics[g].health || 'unknown' });
-        batch.push({ host: mh, key: 'zoom.room.issues', value: probs.length ? probs.join('; ') : 'none' });
+        batch.push({ host: mh, key: 'zoom.room.issues', value: (probs.length && !uc[mh]) ? probs.join('; ') : 'none' });
     }
 } catch (e) { /* metrics scope optional — room/device data still flows without it */ }
 
