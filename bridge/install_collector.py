@@ -14,10 +14,14 @@ import pathlib
 
 from zabbix_client import ZabbixAPI
 
-# one entry per region; optional per-region keys: location_root, fleet_host
+# one entry per region. Rooms are selected by the Zoom location-directory
+# subtree under the node named after the region — the directory is the single
+# source of truth (room naming conventions are not trusted: test/VIP rooms
+# don't follow them). Optional keys: location_root (if the directory node is
+# named differently), fleet_host.
 REGIONS = [
-    {"name": "SG"},                            # rooms share the SG- name prefix
-    {"name": "CNGR", "location_root": "CNGR"}, # no name prefix: select by directory subtree
+    {"name": "SG"},
+    {"name": "CNGR"},
 ]
 CARRIER = "SG-Fleet-Summary"  # host carrying the script item
 KEY = "zoom.bridge.run"

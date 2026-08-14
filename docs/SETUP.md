@@ -166,14 +166,18 @@ repo** (Share → Export) so git stays the source of truth.
 
 CNGR is the live example:
 
-1. Provisioning (per region, env-driven): in `.env` set `REGION_PREFIX=TH` and
-   `HOST_GROUP=Rooms/TH`. If the region's rooms share a name prefix, that's
-   enough; if not, add `LOCATION_ROOT=<directory node name>` to select by
-   location subtree, and `STRIP_CAMPUS_PREFIX=0` if campus names carry
-   meaningful prefixes (cities). Run the provisioning step.
+The Zoom **location directory is the single source of truth** for which rooms
+belong to a region — room naming conventions are not trusted (test/VIP rooms
+don't follow them).
+
+1. Provisioning (per region, env-driven): in `.env` set `REGION_PREFIX=TH`,
+   `HOST_GROUP=Rooms/TH`, and `LOCATION_ROOT=TH` (the region's directory node
+   name). Add `STRIP_CAMPUS_PREFIX=0` if campus names carry meaningful
+   prefixes (cities). Run the provisioning step.
 2. Collector (one item serves ALL regions): add the region to the `REGIONS`
-   table in `install_collector.py` — `{"name": "TH"}`, plus
-   `"location_root": "..."` if it selects by subtree — and re-run
+   table in `install_collector.py` — `{"name": "TH"}`; selection is always the
+   directory subtree under the node named after the region (add
+   `"location_root"` only if the node name differs). Re-run
    `./run_install_collector.sh` once. The account-wide Zoom sweep is shared;
    the region's fleet host gets a `zoom.bridge.run` trapper + nodata watchdog.
 3. Copy the fleet dashboard JSON: swap group filter, region regex prefixes,

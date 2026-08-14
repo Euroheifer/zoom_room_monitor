@@ -10,7 +10,11 @@
 // Item parameters (from host macros, see install_collector.py):
 //   account_id, client_id, client_secret  — Zoom S2S OAuth app
 //   zbx_url, zbx_token                    — this server's API + token
-//   regions             — JSON list [{name, location_root?, fleet_host?}]
+//   regions             — JSON list [{name, location_root?, fleet_host?}];
+//                         rooms are selected by the location-directory subtree
+//                         under the node named location_root (default: name) —
+//                         the directory is the single source of truth, room
+//                         naming conventions are NOT trusted
 //   carrier_fleet_host  — host this item lives on (gets its summary from the
 //                         script return; other regions get theirs pushed to
 //                         their fleet host's zoom.bridge.run trapper item)
@@ -110,11 +114,7 @@ function deviceValues(devices) {
 // --- one cycle -----------------------------------------------------------
 var auth = 'Authorization: Bearer ' + zoomToken();
 var allRooms = fetchPaged(auth, '/rooms', 'rooms');
-
-// directory tree only needed if some region selects by subtree
-var locs = null;
-for (var lr = 0; lr < REGIONS.length; lr++)
-    if (REGIONS[lr].location_root) { locs = fetchPaged(auth, '/rooms/locations', 'locations'); break; }
+var locs = fetchPaged(auth, '/rooms/locations', 'locations');
 
 var batch = [], regionOf = [];   // regionOf[i] = region name of batch[i]
 var perRegion = {};              // name -> {rooms, offline, subset, fleet_host}
@@ -125,14 +125,11 @@ for (r = 0; r < REGIONS.length; r++) {
     var cfg = REGIONS[r];
     var name = cfg.name.toUpperCase();
     var fleetHost = cfg.fleet_host || (name + '-Fleet-Summary');
-    var sub = cfg.location_root ? locationSubtree(locs, cfg.location_root) : null;
+    var sub = locationSubtree(locs, cfg.location_root || cfg.name);
 
     var rooms = [];
-    for (i = 0; i < allRooms.length; i++) {
-        var room = allRooms[i];
-        if (sub ? sub[room.location_id] : (room.name || '').toUpperCase().indexOf(name) === 0)
-            rooms.push(room);
-    }
+    for (i = 0; i < allRooms.length; i++)
+        if (sub[allRooms[i].location_id]) rooms.push(allRooms[i]);
 
     var offline = 0, inmeeting = 0;
     for (i = 0; i < rooms.length; i++) {
