@@ -16,8 +16,8 @@ from zabbix_client import ZabbixAPI
 
 # one entry per region; optional per-region keys: location_root, fleet_host
 REGIONS = [
-    {"name": "SG"},
-    {"name": "CNGR"},
+    {"name": "SG"},                            # rooms share the SG- name prefix
+    {"name": "CNGR", "location_root": "CNGR"}, # no name prefix: select by directory subtree
 ]
 CARRIER = "SG-Fleet-Summary"  # host carrying the script item
 KEY = "zoom.bridge.run"
