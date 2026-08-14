@@ -3,19 +3,26 @@
 // device subset (rotating window over online rooms) -> history.push back
 // into this Zabbix server's own trapper items.
 //
+// ONE item covers ALL regions: the account-wide /rooms and /metrics sweeps
+// happen once per cycle and rooms are bucketed per region here, instead of
+// one item per region each repeating the same sweeps.
+//
 // Item parameters (from host macros, see install_collector.py):
 //   account_id, client_id, client_secret  — Zoom S2S OAuth app
 //   zbx_url, zbx_token                    — this server's API + token
-//   region, subset_size, interval         — SG / 15 / 300 (see install_collector.py)
+//   regions             — JSON list [{name, location_root?, fleet_host?}]
+//   carrier_fleet_host  — host this item lives on (gets its summary from the
+//                         script return; other regions get theirs pushed to
+//                         their fleet host's zoom.bridge.run trapper item)
+//   subset_size, interval — device-detail rotation, per region (15 / 300)
 //
 // Zabbix JS is Duktape (ES5): var/function only, no template literals.
 
 var p = JSON.parse(value);
 var SUBSET = parseInt(p.subset_size || '10', 10);
 var INTERVAL = parseInt(p.interval || '120', 10);
-var REGION = (p.region || 'SG').toUpperCase();
-var LOCATION_ROOT = p.location_root || '';  // select rooms by directory subtree instead of name prefix
-var FLEET_HOST = p.fleet_host || (REGION + '-Fleet-Summary');
+var REGIONS = JSON.parse(p.regions);
+var CARRIER = p.carrier_fleet_host;
 
 function getJson(url, headers) {
     var req = new HttpRequest();
@@ -54,12 +61,11 @@ function fetchPaged(auth, path, listKey) {
     return out;
 }
 
-// All location ids at or under the directory node named LOCATION_ROOT.
-function locationSubtree(auth) {
-    var locs = fetchPaged(auth, '/rooms/locations', 'locations');
+// All location ids at or under the directory node named `root`.
+function locationSubtree(locs, root) {
     var sub = {}, i, changed = true;
     for (i = 0; i < locs.length; i++)
-        if (locs[i].name === LOCATION_ROOT) sub[locs[i].id] = true;
+        if (locs[i].name === root) sub[locs[i].id] = true;
     while (changed) {
         changed = false;
         for (i = 0; i < locs.length; i++)
@@ -68,20 +74,6 @@ function locationSubtree(auth) {
             }
     }
     return sub;
-}
-
-function fetchRegionRooms(auth) {
-    var rooms = fetchPaged(auth, '/rooms', 'rooms');
-    var out = [], i;
-    if (LOCATION_ROOT) {
-        var sub = locationSubtree(auth);
-        for (i = 0; i < rooms.length; i++)
-            if (sub[rooms[i].location_id]) out.push(rooms[i]);
-        return out;
-    }
-    for (i = 0; i < rooms.length; i++)
-        if ((rooms[i].name || '').toUpperCase().indexOf(REGION) === 0) out.push(rooms[i]);
-    return out;
 }
 
 // poll.choose_subset: rotate over ONLINE rooms; offset derived from wall clock
@@ -117,68 +109,114 @@ function deviceValues(devices) {
 
 // --- one cycle -----------------------------------------------------------
 var auth = 'Authorization: Bearer ' + zoomToken();
-var rooms = fetchRegionRooms(auth);
-var batch = [], offline = 0, k;
+var allRooms = fetchPaged(auth, '/rooms', 'rooms');
 
-for (var i = 0; i < rooms.length; i++) {
-    var status = rooms[i].status || 'Unknown';
-    if (status === 'Offline') offline++;
-    var host = sanitizeHost(rooms[i].name);
-    batch.push({ host: host, key: 'zoom.room.status', value: status });
-    batch.push({ host: host, key: 'zoom.room.online', value: String(status === 'Offline' ? 0 : 1) });
-}
+// directory tree only needed if some region selects by subtree
+var locs = null;
+for (var lr = 0; lr < REGIONS.length; lr++)
+    if (REGIONS[lr].location_root) { locs = fetchPaged(auth, '/rooms/locations', 'locations'); break; }
 
-var subset = chooseSubset(rooms);
-for (var s = 0; s < subset.length; s++) {
-    var resp;
-    try {
-        resp = getJson('https://api.zoom.us/v2/rooms/' + subset[s].id + '/devices', [auth]);
-    } catch (e) { continue; }  // per-room device fetch is best-effort, like poll.py
-    var dv = deviceValues(resp.devices || []);
-    for (k in dv) batch.push({ host: sanitizeHost(subset[s].name), key: k, value: String(dv[k]) });
+var batch = [], regionOf = [];   // regionOf[i] = region name of batch[i]
+var perRegion = {};              // name -> {rooms, offline, subset, fleet_host}
+var regionByHost = {}, uc = {};  // sanitized host -> region name / under construction
+var k, i, r;
+
+for (r = 0; r < REGIONS.length; r++) {
+    var cfg = REGIONS[r];
+    var name = cfg.name.toUpperCase();
+    var fleetHost = cfg.fleet_host || (name + '-Fleet-Summary');
+    var sub = cfg.location_root ? locationSubtree(locs, cfg.location_root) : null;
+
+    var rooms = [];
+    for (i = 0; i < allRooms.length; i++) {
+        var room = allRooms[i];
+        if (sub ? sub[room.location_id] : (room.name || '').toUpperCase().indexOf(name) === 0)
+            rooms.push(room);
+    }
+
+    var offline = 0, inmeeting = 0;
+    for (i = 0; i < rooms.length; i++) {
+        var status = rooms[i].status || 'Unknown';
+        if (status === 'Offline') offline++;
+        if (status === 'InMeeting') inmeeting++;
+        var host = sanitizeHost(rooms[i].name);
+        regionByHost[host] = name;
+        // rooms marked Under Construction in Zoom admin: suppress issue alerts
+        if (status === 'UnderConstruction') uc[host] = true;
+        batch.push({ host: host, key: 'zoom.room.status', value: status });
+        batch.push({ host: host, key: 'zoom.room.online', value: String(status === 'Offline' ? 0 : 1) });
+        regionOf.push(name); regionOf.push(name);
+    }
+
+    var subset = chooseSubset(rooms);
+    for (var s = 0; s < subset.length; s++) {
+        var resp;
+        try {
+            resp = getJson('https://api.zoom.us/v2/rooms/' + subset[s].id + '/devices', [auth]);
+        } catch (e) { continue; }  // per-room device fetch is best-effort, like poll.py
+        var dv = deviceValues(resp.devices || []);
+        for (k in dv) {
+            batch.push({ host: sanitizeHost(subset[s].name), key: k, value: String(dv[k]) });
+            regionOf.push(name);
+        }
+    }
+
+    var fleet = { 'zoom.fleet.total': rooms.length, 'zoom.fleet.offline': offline,
+                  'zoom.fleet.online': rooms.length - offline, 'zoom.fleet.inmeeting': inmeeting };
+    for (k in fleet) {
+        batch.push({ host: fleetHost, key: k, value: String(fleet[k]) });
+        regionOf.push(name);
+    }
+
+    perRegion[name] = { rooms: rooms.length, offline: offline, subset: subset.length,
+                        fleet_host: fleetHost };
 }
 
 // Dashboard metrics: fleet-wide per-room health + component issues (mic /
 // speaker / camera / controller) in one paged call; keep only our rooms.
-var ours = {}, uc = {};
-for (var o = 0; o < rooms.length; o++) {
-    var oh = sanitizeHost(rooms[o].name);
-    ours[oh] = true;
-    // rooms marked Under Construction in Zoom admin: suppress issue alerts
-    if (rooms[o].status === 'UnderConstruction') uc[oh] = true;
-}
 try {
     var metrics = fetchPaged(auth, '/metrics/zoomrooms', 'zoom_rooms');
     for (var g = 0; g < metrics.length; g++) {
         var mh = sanitizeHost(metrics[g].room_name || '');
-        if (!ours[mh]) continue;
+        if (!regionByHost[mh]) continue;
         var probs = [];
         var raw = metrics[g].issues || [];
         for (var q = 0; q < raw.length; q++) if (raw[q]) probs.push(raw[q]);
         batch.push({ host: mh, key: 'zoom.room.health', value: metrics[g].health || 'unknown' });
         batch.push({ host: mh, key: 'zoom.room.issues', value: (probs.length && !uc[mh]) ? probs.join('; ') : 'none' });
+        regionOf.push(regionByHost[mh]); regionOf.push(regionByHost[mh]);
     }
 } catch (e) { /* metrics scope optional — room/device data still flows without it */ }
 
-var inmeeting = 0;
-for (var m = 0; m < rooms.length; m++) if (rooms[m].status === 'InMeeting') inmeeting++;
-var fleet = { 'zoom.fleet.total': rooms.length, 'zoom.fleet.offline': offline,
-              'zoom.fleet.online': rooms.length - offline, 'zoom.fleet.inmeeting': inmeeting };
-for (k in fleet) batch.push({ host: FLEET_HOST, key: k, value: String(fleet[k]) });
-
 // history.push (Zabbix 6.4+) — feeds the same trapper items the Python bridge did.
-var req = new HttpRequest();
-req.addHeader('Content-Type: application/json-rpc');
-req.addHeader('Authorization: Bearer ' + p.zbx_token);
-var pushBody = req.post(p.zbx_url, JSON.stringify(
-    { jsonrpc: '2.0', method: 'history.push', params: batch, id: 1 }));
-if (req.getStatus() !== 200) throw 'history.push: HTTP ' + req.getStatus();
-var push = JSON.parse(pushBody);
-if (push.error) throw 'history.push: ' + JSON.stringify(push.error);
+function historyPush(params) {
+    var req = new HttpRequest();
+    req.addHeader('Content-Type: application/json-rpc');
+    req.addHeader('Authorization: Bearer ' + p.zbx_token);
+    var body = req.post(p.zbx_url, JSON.stringify(
+        { jsonrpc: '2.0', method: 'history.push', params: params, id: 1 }));
+    if (req.getStatus() !== 200) throw 'history.push: HTTP ' + req.getStatus();
+    var push = JSON.parse(body);
+    if (push.error) throw 'history.push: ' + JSON.stringify(push.error);
+    return (push.result && push.result.data) || [];
+}
 
-var failed = 0;
-var data = (push.result && push.result.data) || [];
-for (var d = 0; d < data.length; d++) if (data[d].error) failed++;
+var data = historyPush(batch);
+for (var d = 0; d < data.length; d++) if (data[d].error) {
+    var rg = perRegion[regionOf[d]];
+    if (rg) rg.failed = (rg.failed || 0) + 1;
+}
 
-return JSON.stringify({ rooms: rooms.length, offline: offline, subset: subset.length,
-                        items: batch.length, failed: failed });
+// per-region cycle summaries -> zoom.bridge.run on each non-carrier fleet
+// host (keeps the per-region nodata triggers meaningful); the carrier's
+// summary is this script's return value.
+var summaries = {}, remote = [];
+for (k in perRegion) {
+    r = perRegion[k];
+    summaries[k] = { rooms: r.rooms, offline: r.offline, subset: r.subset, failed: r.failed || 0 };
+    if (r.fleet_host !== CARRIER)
+        remote.push({ host: r.fleet_host, key: 'zoom.bridge.run', value: JSON.stringify(summaries[k]) });
+}
+if (remote.length) historyPush(remote);
+
+return JSON.stringify({ regions: summaries, items: batch.length });
