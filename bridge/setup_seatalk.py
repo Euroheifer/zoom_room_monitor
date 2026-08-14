@@ -1,24 +1,37 @@
 #!/usr/bin/env python3
-"""One-shot, idempotent: wire CNGR room alerts to SeaTalk.
+"""One-shot, idempotent: wire a region's Zoom Room alerts to SeaTalk.
 
-Creates on zabbix.cit.insea.io (via ZBX_API_URL/ZBX_API_TOKEN from .env):
-  1. media type "Seatalk-ZoomRooms-CNGR" — clone of the house "Seatalk"
-     webhook media type (id 42) with our group webhook URL
+Usage: python3 setup_seatalk.py CNGR|SG
+(with ZBX_API_URL, ZBX_API_TOKEN and the region's webhook var from .env)
+
+Creates on zabbix.cit.insea.io per region:
+  1. media type "Seatalk-ZoomRooms-<region>" — clone of the house "Seatalk"
+     webhook media type (id 42) with the region's group webhook URL and
+     chat-friendly message templates
   2. user group "Zoom Rooms Alerts" (no frontend, read on Rooms/* groups)
-     + user "svc-zoomrooms-seatalk" carrying the media
-  3. trigger action "Zoom Rooms CNGR - SeaTalk alerts"
-     (host group Rooms/CNGR, severity >= Average, problem + recovery)
-
-Run: set -a && . ./.env && set +a && python3 setup_seatalk_cngr.py
+     + user "svc-zoomrooms-seatalk" carrying one media per region
+  3. trigger action "Zoom Rooms <region> - SeaTalk alerts"
+     (host group, severity >= Average, problem + recovery)
 """
 import json, os, ssl, sys, urllib.request
 
+REGIONS = {
+    "CNGR": {"hostgroup": "512", "webhook_env": "SEATALK_WEBHOOK_URL"},
+    "SG":   {"hostgroup": "507", "webhook_env": "SEATALK_WEBHOOK_URL_SG"},
+}
+
+if len(sys.argv) != 2 or sys.argv[1].upper() not in REGIONS:
+    sys.exit(f"usage: {sys.argv[0]} {'|'.join(REGIONS)}")
+REGION = sys.argv[1].upper()
+CFG = REGIONS[REGION]
+
 URL = os.environ['ZBX_API_URL']
 TOKEN = os.environ['ZBX_API_TOKEN']
-NEW_HOOK = os.environ['SEATALK_WEBHOOK_URL']  # from .env — secret, keep out of git
+NEW_HOOK = os.environ[CFG['webhook_env']]  # from .env — secret, keep out of git
 SRC_MEDIATYPE = "42"  # house "Seatalk" media type to clone
 SRC_HOOK = "https://openapi.seatalk.io/webhook/group/giNuXFuNRWOv_tMcHRJ6uQ"
-SG_GROUP, CNGR_GROUP = "507", "512"  # Rooms/Singapore, Rooms/CNGR
+MT_NAME = f"Seatalk-ZoomRooms-{REGION}"
+ACTION_NAME = f"Zoom Rooms {REGION} - SeaTalk alerts"
 
 ctx = ssl.create_default_context()
 if os.environ.get('ZBX_SSL_VERIFY', '1') in ('0', 'false', 'False'):
@@ -55,28 +68,26 @@ script = script.replace(
     '" " + params.alert_subject;\n\n'
     + _ANCHOR)
 
-# compact chat-friendly templates (house ones repeat the problem name 3x)
+# compact chat-friendly templates (house ones repeat the problem name 3x).
+# No event timestamp: the chat bubble's own time is within one 5-min poll of
+# the event and renders in each viewer's timezone. SeaTalk renders markdown
+# when the webhook payload has format:1 (house default).
 OVERRIDES = {
-    # emoji prefix (yellow/red/green by severity + state) is added by the JS below
-    # no event timestamp: the chat bubble's own time is within one 5-min poll
-    # of the event and renders in each viewer's timezone.
-    # SeaTalk renders markdown when the webhook payload has format:1 (house default)
     ('0', '0'): {"subject": "**{HOST.NAME}**",
                  "message": "\n**Severity:** {EVENT.SEVERITY}\n\n**Issue:**\n- {EVENT.NAME}"},
     ('0', '1'): {"subject": "**{HOST.NAME}**",
                  "message": "\n**Resolved after** {EVENT.DURATION}\n\n**Issue:**\n- {EVENT.NAME}"},
 }
 
-existing = rpc('mediatype.get', {"filter": {"name": "Seatalk-ZoomRooms-CNGR"},
-                                 "output": ["mediatypeid"]})
+existing = rpc('mediatype.get', {"filter": {"name": MT_NAME}, "output": ["mediatypeid"]})
 if existing:
     mtid = existing[0]['mediatypeid']
     print("media type exists:", mtid)
 else:
     mtid = rpc('mediatype.create', {
-        "type": 4, "name": "Seatalk-ZoomRooms-CNGR", "status": 0,
+        "type": 4, "name": MT_NAME, "status": 0,
         "script": script,
-        "description": "Zoom Room monitor -> SeaTalk group 'CNGR Zoom Room Alerts'. "
+        "description": f"Zoom Room monitor -> SeaTalk group '{REGION} Zoom Room Alerts'. "
                        "Cloned from 'Seatalk' (id 42). Owner: luhl@sea.com",
         "parameters": [{"name": p["name"], "value": p["value"]} for p in src["parameters"]]
                       + [{"name": "nseverity", "value": "{EVENT.NSEVERITY}"},
@@ -88,46 +99,54 @@ else:
     })['mediatypeids'][0]
     print("media type created:", mtid)
 
-# 2. role + user group + user
+# 2. role + user group + user (shared across regions)
 roles = rpc('role.get', {"filter": {"name": ["User role", "Viewer"]}, "output": ["roleid"]})
 if not roles:
     sys.exit("no user-level role named 'User role' or 'Viewer' found — pick one from role.get")
 role = roles[0]['roleid']
+
 ug = rpc('usergroup.get', {"filter": {"name": "Zoom Rooms Alerts"}, "output": ["usrgrpid"]})
 if ug:
     ugid = ug[0]['usrgrpid']
     print("usergroup exists:", ugid)
 else:
     ugid = rpc('usergroup.create', {"name": "Zoom Rooms Alerts", "gui_access": 3,
-        "hostgroup_rights": [{"id": SG_GROUP, "permission": 2},
-                             {"id": CNGR_GROUP, "permission": 2}]})['usrgrpids'][0]
+        "hostgroup_rights": [{"id": g["hostgroup"], "permission": 2}
+                             for g in REGIONS.values()]})['usrgrpids'][0]
     print("usergroup created:", ugid)
 
-u = rpc('user.get', {"filter": {"username": "svc-zoomrooms-seatalk"}, "output": ["userid"]})
+# sendto "-": house script @mentions ALERT.SENDTO as emails; "-" mentions nobody
+new_media = {"mediatypeid": mtid, "sendto": "-", "severity": 63,
+             "active": 0, "period": "1-7,00:00-24:00"}
+u = rpc('user.get', {"filter": {"username": "svc-zoomrooms-seatalk"},
+                     "output": ["userid"], "selectMedias": "extend"})
 if u:
     uid = u[0]['userid']
-    print("user exists:", uid)
+    medias = [{k: m[k] for k in ("mediatypeid", "sendto", "severity", "active", "period")}
+              for m in u[0]['medias']]
+    if any(m['mediatypeid'] == mtid for m in medias):
+        print("user exists with this media:", uid)
+    else:
+        rpc('user.update', {"userid": uid, "medias": medias + [new_media]})
+        print("user exists, media added:", uid)
 else:
     uid = rpc('user.create', {"username": "svc-zoomrooms-seatalk",
         "name": "Zoom Rooms SeaTalk notifier", "roleid": role,
         "usrgrps": [{"usrgrpid": ugid}],
-        # sendto "-": house script @mentions ALERT.SENDTO as emails; "-" mentions nobody
-        "medias": [{"mediatypeid": mtid, "sendto": "-", "severity": 63,
-                    "active": 0, "period": "1-7,00:00-24:00"}]})['userids'][0]
+        "medias": [new_media]})['userids'][0]
     print("user created:", uid)
 
 # 3. trigger action
-a = rpc('action.get', {"filter": {"name": "Zoom Rooms CNGR - SeaTalk alerts"},
-                       "output": ["actionid"]})
+a = rpc('action.get', {"filter": {"name": ACTION_NAME}, "output": ["actionid"]})
 if a:
     print("action exists:", a[0]['actionid'])
 else:
     aid = rpc('action.create', {
-        "name": "Zoom Rooms CNGR - SeaTalk alerts", "eventsource": 0, "status": 0,
+        "name": ACTION_NAME, "eventsource": 0, "status": 0,
         "esc_period": "1h", "pause_suppressed": 1,
         "filter": {"evaltype": 0, "conditions": [
-            {"conditiontype": 0, "operator": 0, "value": CNGR_GROUP},   # host group = Rooms/CNGR
-            {"conditiontype": 4, "operator": 5, "value": "3"}]},        # severity >= Average
+            {"conditiontype": 0, "operator": 0, "value": CFG["hostgroup"]},  # host group
+            {"conditiontype": 4, "operator": 5, "value": "3"}]},             # severity >= Average
         "operations": [{"operationtype": 0, "esc_step_from": 1, "esc_step_to": 1,
             "opmessage": {"default_msg": 1, "mediatypeid": mtid},
             "opmessage_usr": [{"userid": uid}]}],
@@ -137,4 +156,4 @@ else:
     })['actionids'][0]
     print("action created:", aid)
 
-print("\nDone. Next CNGR problem (severity >= Average) posts to SeaTalk.")
+print(f"\nDone. Next {REGION} problem (severity >= Average) posts to SeaTalk.")
