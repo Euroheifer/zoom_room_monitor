@@ -164,13 +164,18 @@ repo** (Share → Export) so git stays the source of truth.
 
 ## Setting up another country
 
-Pure env config — no code changes (CNGR is the live example):
+CNGR is the live example:
 
-1. In `.env`: `REGION_PREFIX=TH` and `HOST_GROUP=Rooms/TH`. If the region's
-   rooms share a name prefix, that's enough; if not, add `LOCATION_ROOT=<directory
-   node name>` to select by location subtree, and `STRIP_CAMPUS_PREFIX=0` if
-   campus names carry meaningful prefixes (cities).
-2. Run Steps 4–5 — separate host group, fleet host, and collector per region.
+1. Provisioning (per region, env-driven): in `.env` set `REGION_PREFIX=TH` and
+   `HOST_GROUP=Rooms/TH`. If the region's rooms share a name prefix, that's
+   enough; if not, add `LOCATION_ROOT=<directory node name>` to select by
+   location subtree, and `STRIP_CAMPUS_PREFIX=0` if campus names carry
+   meaningful prefixes (cities). Run the provisioning step.
+2. Collector (one item serves ALL regions): add the region to the `REGIONS`
+   table in `install_collector.py` — `{"name": "TH"}`, plus
+   `"location_root": "..."` if it selects by subtree — and re-run
+   `./run_install_collector.sh` once. The account-wide Zoom sweep is shared;
+   the region's fleet host gets a `zoom.bridge.run` trapper + nodata watchdog.
 3. Copy the fleet dashboard JSON: swap group filter, region regex prefixes,
    title, and `uid`; import (see `deploy/grafana-dashboard-cngr.json` for a
    worked example). The room-detail dashboard needs no copy.
