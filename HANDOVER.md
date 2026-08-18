@@ -120,7 +120,7 @@ user a `! cd ... && ...` one-liner.
 ## Where things are documented
 
 - Confluence (space `~luhl@sea.com`, under "Zoom Room Monitoring — Build
-  Guide"): SeaTalk Alert Setup Guide (pageId **270649541**), Roadmap &
+  Guide"): SeaTalk Alert Setup Guide (pageId **270650478**, scopes model), Roadmap &
   Pending Work (pageId **270649652**), Add a New Region step-by-step
   (pageId **270650415**, newbie-friendly, MY as worked example).
 - SeaTalk groups: "CNGR Zoom Room Alerts", "SG Zoom Room Alerts" (user owns
