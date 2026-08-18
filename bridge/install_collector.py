@@ -22,6 +22,7 @@ from zabbix_client import ZabbixAPI
 REGIONS = [
     {"name": "SG"},
     {"name": "CNGR"},
+    {"name": "BR"},
 ]
 CARRIER = "SG-Fleet-Summary"  # host carrying the script item
 KEY = "zoom.bridge.run"
@@ -43,11 +44,12 @@ PARAMETERS = [
     {"name": "zbx_token", "value": "{$ZOOM.ZBX.TOKEN}"},
     {"name": "regions", "value": json.dumps(REGIONS)},
     {"name": "carrier_fleet_host", "value": CARRIER},
-    # subset/interval sizing: keep ceil(rooms/subset)*interval under the device
-    # triggers' DEVICE_STALE_WINDOW (see provision.py). 15 per 5m cycle sweeps
-    # 135 SG rooms in ~45m; at 700 rooms use subset 30 + a 3h window.
-    # subset is PER REGION (device calls per cycle = subset * regions).
-    {"name": "subset_size", "value": os.environ.get("PERIPHERAL_SUBSET_SIZE", "15")},
+    # Device-detail rotation budget, GLOBAL across regions: Zoom calls per cycle
+    # = subset_size regardless of region count (30 sequential calls fits the 60s
+    # item timeout). Keep ceil(total_rooms/subset)*interval under the device
+    # triggers' DEVICE_STALE_WINDOW (provision.py): 234 rooms / 30 per 5m ~= 40m
+    # < 1h. At ~760 rooms that sweep is ~2h — raise DEVICE_STALE_WINDOW to 3h.
+    {"name": "subset_size", "value": os.environ.get("PERIPHERAL_SUBSET_SIZE", "30")},
     {"name": "interval", "value": "300"},  # must match the item delay below
 ]
 

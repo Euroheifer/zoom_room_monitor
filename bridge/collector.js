@@ -18,7 +18,11 @@
 //   carrier_fleet_host  — host this item lives on (gets its summary from the
 //                         script return; other regions get theirs pushed to
 //                         their fleet host's zoom.bridge.run trapper item)
-//   subset_size, interval — device-detail rotation, per region (15 / 300)
+//   subset_size, interval — device-detail rotation budget, GLOBAL across all
+//                           regions (30 / 300): API cost stays flat as regions
+//                           are added; the sweep just takes longer, so keep
+//                           ceil(total_rooms/subset)*interval under
+//                           DEVICE_STALE_WINDOW (provision.py)
 //
 // Zabbix JS is Duktape (ES5): var/function only, no template literals.
 
@@ -82,11 +86,15 @@ function locationSubtree(locs, root) {
 
 // poll.choose_subset: rotate over ONLINE rooms; offset derived from wall clock
 // since script items keep no state between runs (cycle number * subset size).
-function chooseSubset(rooms) {
+// `entries` are {room, region} across ALL regions — one shared budget keeps the
+// per-cycle Zoom call count flat no matter how many regions exist.
+function chooseSubset(entries) {
     var online = [];
-    for (var i = 0; i < rooms.length; i++)
-        if (rooms[i].status !== 'Offline') online.push(rooms[i]);
-    online.sort(function (a, b) { return a.name < b.name ? -1 : a.name > b.name ? 1 : 0; });
+    for (var i = 0; i < entries.length; i++)
+        if (entries[i].room.status !== 'Offline') online.push(entries[i]);
+    online.sort(function (a, b) {
+        return a.room.name < b.room.name ? -1 : a.room.name > b.room.name ? 1 : 0;
+    });
     if (!online.length) return [];
     var offset = Math.floor(Date.now() / 1000 / INTERVAL) * SUBSET;
     var start = offset % online.length, out = [];
@@ -119,6 +127,7 @@ var locs = fetchPaged(auth, '/rooms/locations', 'locations');
 var batch = [], regionOf = [];   // regionOf[i] = region name of batch[i]
 var perRegion = {};              // name -> {rooms, offline, subset, fleet_host}
 var regionByHost = {}, uc = {};  // sanitized host -> region name / under construction
+var candidates = [];             // {room, region} for the global device rotation
 var k, i, r;
 
 for (r = 0; r < REGIONS.length; r++) {
@@ -143,19 +152,7 @@ for (r = 0; r < REGIONS.length; r++) {
         batch.push({ host: host, key: 'zoom.room.status', value: status });
         batch.push({ host: host, key: 'zoom.room.online', value: String(status === 'Offline' ? 0 : 1) });
         regionOf.push(name); regionOf.push(name);
-    }
-
-    var subset = chooseSubset(rooms);
-    for (var s = 0; s < subset.length; s++) {
-        var resp;
-        try {
-            resp = getJson('https://api.zoom.us/v2/rooms/' + subset[s].id + '/devices', [auth]);
-        } catch (e) { continue; }  // per-room device fetch is best-effort, like poll.py
-        var dv = deviceValues(resp.devices || []);
-        for (k in dv) {
-            batch.push({ host: sanitizeHost(subset[s].name), key: k, value: String(dv[k]) });
-            regionOf.push(name);
-        }
+        candidates.push({ room: rooms[i], region: name });
     }
 
     var fleet = { 'zoom.fleet.total': rooms.length, 'zoom.fleet.offline': offline,
@@ -165,8 +162,23 @@ for (r = 0; r < REGIONS.length; r++) {
         regionOf.push(name);
     }
 
-    perRegion[name] = { rooms: rooms.length, offline: offline, subset: subset.length,
+    perRegion[name] = { rooms: rooms.length, offline: offline, subset: 0,
                         fleet_host: fleetHost };
+}
+
+// device detail for one rotating slice of the whole fleet (shared budget)
+var subset = chooseSubset(candidates);
+for (var s = 0; s < subset.length; s++) {
+    var resp;
+    try {
+        resp = getJson('https://api.zoom.us/v2/rooms/' + subset[s].room.id + '/devices', [auth]);
+    } catch (e) { continue; }  // per-room device fetch is best-effort, like poll.py
+    var dv = deviceValues(resp.devices || []);
+    perRegion[subset[s].region].subset++;
+    for (k in dv) {
+        batch.push({ host: sanitizeHost(subset[s].room.name), key: k, value: String(dv[k]) });
+        regionOf.push(subset[s].region);
+    }
 }
 
 // Dashboard metrics: fleet-wide per-room health + component issues (mic /

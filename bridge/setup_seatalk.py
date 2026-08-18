@@ -31,19 +31,28 @@ import ssl
 import sys
 import urllib.request
 
+# hostgroup is the Zabbix host group NAME (resolved to an id at run time, so a
+# newly provisioned region needs no id lookup); tags {} = whole region.
 SCOPES = {
     # region-wide
-    "SG":      {"hostgroup": "507", "tags": {}, "webhook_env": "SEATALK_WEBHOOK_URL_SG"},
-    "CNGR":    {"hostgroup": "512", "tags": {}, "webhook_env": "SEATALK_WEBHOOK_URL"},
+    "SG":      {"hostgroup": "Rooms/Singapore", "tags": {}, "webhook_env": "SEATALK_WEBHOOK_URL_SG"},
+    "CNGR":    {"hostgroup": "Rooms/CNGR", "tags": {}, "webhook_env": "SEATALK_WEBHOOK_URL"},
+    "BR":      {"hostgroup": "Rooms/BR", "tags": {}, "webhook_env": "SEATALK_WEBHOOK_URL_BR"},
     # SG buildings — GLX ~20 alerts/day, RC ~6, 5SPD ~3 (14d sample, 2026-08-18).
     # Small sites (Cogent/LCS/Pandan/home) and the fleet watchdog stay with SG:
     # SG-Fleet-Summary carries no building tag, so only the region scope sees it.
-    "SG-GLX":  {"hostgroup": "507", "tags": {"building": "GLX"},
+    "SG-GLX":  {"hostgroup": "Rooms/Singapore", "tags": {"building": "GLX"},
                 "webhook_env": "SEATALK_WEBHOOK_URL_SG_GLX"},
-    "SG-RC":   {"hostgroup": "507", "tags": {"building": "RC"},
+    "SG-RC":   {"hostgroup": "Rooms/Singapore", "tags": {"building": "RC"},
                 "webhook_env": "SEATALK_WEBHOOK_URL_SG_RC"},
-    "SG-5SPD": {"hostgroup": "507", "tags": {"building": "5SPD"},
+    "SG-5SPD": {"hostgroup": "Rooms/Singapore", "tags": {"building": "5SPD"},
                 "webhook_env": "SEATALK_WEBHOOK_URL_SG_5SPD"},
+    # BR buildings — FLP 44 rooms, B32 15; HYP 10 / FBSSP9 1 / SFB 1 and the
+    # fleet watchdog stay with the BR region scope.
+    "BR-FLP":  {"hostgroup": "Rooms/BR", "tags": {"building": "FLP"},
+                "webhook_env": "SEATALK_WEBHOOK_URL_BR_FLP"},
+    "BR-B32":  {"hostgroup": "Rooms/BR", "tags": {"building": "B32"},
+                "webhook_env": "SEATALK_WEBHOOK_URL_BR_B32"},
 }
 MIN_SEVERITY = "3"          # Average and above (device disconnects + offline)
 MT_NAME = "Seatalk-ZoomRooms"
@@ -129,11 +138,18 @@ def ensure_media_type():
     return mtid
 
 
-def ensure_usergroup():
+def hostgroup_ids():
+    """{name: id} for the SCOPES host groups that exist (a region not yet
+    provisioned simply has none, and its scopes are skipped)."""
+    names = sorted({s["hostgroup"] for s in SCOPES.values()})
+    got = rpc('hostgroup.get', {"filter": {"name": names}, "output": ["groupid", "name"]})
+    return {g["name"]: g["groupid"] for g in got}
+
+
+def ensure_usergroup(gids):
     # read access to every scope's host group — Zabbix silently drops alerts for
     # hosts the receiving user cannot read, so re-assert rights on every run
-    rights = [{"id": g, "permission": 2}
-              for g in sorted({s["hostgroup"] for s in SCOPES.values()})]
+    rights = [{"id": g, "permission": 2} for g in sorted(gids.values())]
     got = rpc('usergroup.get', {"filter": {"name": UG_NAME}, "output": ["usrgrpid"]})
     if got:
         ugid = got[0]['usrgrpid']
@@ -163,10 +179,10 @@ def ensure_user(scope, webhook, mtid, ugid, roleid):
     return uid
 
 
-def ensure_action(scope, cfg, mtid, uid):
+def ensure_action(scope, cfg, mtid, uid, gid):
     name = f"Zoom Rooms {scope} - SeaTalk alerts"
     conditions = [
-        {"conditiontype": 0, "operator": 0, "value": cfg["hostgroup"]},      # host group
+        {"conditiontype": 0, "operator": 0, "value": gid},                   # host group
         {"conditiontype": 4, "operator": 5, "value": MIN_SEVERITY},          # severity >=
     ]
     # event tag value (26): value2 = tag name, value = tag value, operator 0 = equals
@@ -216,16 +232,24 @@ def main():
         sys.exit("no user-level role named 'User role' or 'Viewer' — pick one from role.get")
     roleid = roles[0]['roleid']
 
+    gids = hostgroup_ids()
+    missing = {s for s, c in SCOPES.items()
+               if s in todo and c["hostgroup"] not in gids}
+    for scope in sorted(missing):
+        print(f"{scope}: skipped — host group {SCOPES[scope]['hostgroup']!r} does not "
+              "exist yet (provision the region first)")
+        todo.pop(scope)
+    if not todo:
+        sys.exit("nothing to do")
+
     mtid = ensure_media_type()
-    ugid = ensure_usergroup()
+    ugid = ensure_usergroup(gids)
     for scope, webhook in todo.items():
         print(f"{scope}:")
         uid = ensure_user(scope, webhook, mtid, ugid, roleid)
-        ensure_action(scope, SCOPES[scope], mtid, uid)
+        ensure_action(scope, SCOPES[scope], mtid, uid, gids[SCOPES[scope]["hostgroup"]])
 
     print(f"\nDone: {', '.join(todo)}. Next matching problem posts to SeaTalk.")
-    print("Superseded by this run (delete in the UI once alerts look right): "
-          "media types Seatalk-ZoomRooms-SG / -CNGR, user svc-zoomrooms-seatalk.")
 
 
 if __name__ == "__main__":
