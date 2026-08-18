@@ -31,6 +31,14 @@ table in `setup_seatalk.py`. SG buildings live: **GLX 282**, **RC 283**,
 media type; old clones 151/152 and user 146 deleted. Region and building groups
 overlap by design (regional IT keeps the full view).
 
+- [ ] **BR region group — deferred 2026-08-18, leaves a gap.** Only BR-FLP (44
+  rooms) and BR-B32 (15) have SeaTalk groups, so alerts for **HYP (10 rooms),
+  FBSSP9 (1), SFB (1) and the BR collector watchdog go nowhere** — those
+  hosts carry no FLP/B32 building tag, and `BR-Fleet-Summary` carries no
+  building tag at all, so a dead collector would be silent for BR. Fix: one
+  SeaTalk group + `SEATALK_WEBHOOK_URL_BR` in `.env`, then
+  `python3 setup_seatalk.py BR` (scope already in the table). Until then
+  watch BR on the dashboard / Zabbix Problems.
 - [ ] CNGR buildings when wanted — add `SCOPES` rows with
   `{"building": "SH-CaoHeJing"}` etc. (tag values: see CNGR host tags), one
   SeaTalk group + webhook each, re-run the script. No code change needed.
