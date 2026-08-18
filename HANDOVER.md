@@ -94,6 +94,7 @@ user a `! cd ... && ...` one-liner.
 | New region | TODO.md has the recipe + efficiency plan; docs/SETUP.md "Setting up another country" |
 | New SeaTalk destination (region or building) | group + System Account webhook (SeaTalk desktop, manual) → `.env` var → `SCOPES` entry in `setup_seatalk.py` → run. Building tag values come from the host `building` tag (see Zabbix host tags, e.g. GLX/RC/5SPD/LCS/Cogent/Pandan) |
 | Health check | `zoom.bridge.run` lastvalue on the carrier fleet host — `{"regions":{"SG":{...,"failed":0},...}}`. `failed:N` in multiples of 4 ≈ N/4 rooms whose 4 trapper items reject pushes: either the room has no Zabbix host (run provision) or the host was **just** provisioned and Zabbix's configuration cache has not picked it up yet — that clears itself within a few cycles, so re-check before digging |
+| Force a test alert | push `zoom.room.issues` = `TEST ALERT please ignore - ...` then `none` (the issue trigger flips on one value; offline needs two). **Pick a room whose issues are currently `none`** — a room already in problem state just changes the value, so no new event and no alert. Recovery messages only fire for problems that *started* after the action existed. |
 | Alert format change | edit `MT_SCRIPT`/`MT_TEMPLATES` in `setup_seatalk.py` and re-run (converges media type 153 — one place, all scopes); preview by POSTing to a webhook directly |
 
 ## Gotchas (each cost us a debugging session)
