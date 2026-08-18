@@ -105,14 +105,17 @@ if not roles:
     sys.exit("no user-level role named 'User role' or 'Viewer' found — pick one from role.get")
 role = roles[0]['roleid']
 
+# read access to every region's host group — Zabbix silently drops alerts
+# for hosts the receiving user can't read, so re-assert rights on every run
+rights = [{"id": g["hostgroup"], "permission": 2} for g in REGIONS.values()]
 ug = rpc('usergroup.get', {"filter": {"name": "Zoom Rooms Alerts"}, "output": ["usrgrpid"]})
 if ug:
     ugid = ug[0]['usrgrpid']
-    print("usergroup exists:", ugid)
+    rpc('usergroup.update', {"usrgrpid": ugid, "hostgroup_rights": rights})
+    print("usergroup exists, rights ensured:", ugid)
 else:
     ugid = rpc('usergroup.create', {"name": "Zoom Rooms Alerts", "gui_access": 3,
-        "hostgroup_rights": [{"id": g["hostgroup"], "permission": 2}
-                             for g in REGIONS.values()]})['usrgrpids'][0]
+        "hostgroup_rights": rights})['usrgrpids'][0]
     print("usergroup created:", ugid)
 
 # sendto "-": house script @mentions ALERT.SENDTO as emails; "-" mentions nobody
