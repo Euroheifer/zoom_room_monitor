@@ -6,12 +6,11 @@ source of truth for region membership.
 
 ## 1. Scale-out prerequisites (do before mass region onboarding)
 
-- [ ] **Global device-rotation budget** — the device-detail subset is 15 rooms
-  *per region*, fetched sequentially inside one script-item run (60s timeout).
-  Fine at 2 regions (30 calls); blows the timeout at ~16 regions (240 calls).
-  Switch `collector.js` to one global rotation budget (~30 rooms/cycle across
-  all regions); peripheral freshness stretches with fleet size — widen
-  `DEVICE_STALE_WINDOW` (provision.py) to match `ceil(rooms/budget)*interval`.
+- [x] **Global device-rotation budget** — DONE 2026-08-18: one shared budget
+  (`subset_size`, default 30) across all regions, so Zoom calls per cycle stay
+  flat as regions are added. Verified live with 3 regions (235 rooms, ~40min
+  sweep, under the 1h `DEVICE_STALE_WINDOW`). Check:
+  `node bridge/test_collector_subset.js`.
 - [ ] **Single region manifest** — region list currently lives in 3 places:
   `install_collector.py` REGIONS, `setup_seatalk.py` REGIONS, and env vars
   typed for provisioning. One `regions.py` table consumed by all three + an
@@ -61,8 +60,8 @@ overlap by design (regional IT keeps the full view).
 
 ## Remaining regions (room counts by directory node, 2026-08-14)
 
-CNDC 143, ID 77 + ID-BKE 20, BR 71, CNCB 67, VN 61, PH 50 + PH-BLI 10,
-TH 34, MY 29, TW 20, MX 7, KR 5, IN 3 — plus live SG 139, CNGR 24 ≈ 760 total.
+CNDC 143, ID 77 + ID-BKE 20, CNCB 67, VN 61, PH 50 + PH-BLI 10, TH 34,
+MY 29, TW 20, MX 7, KR 5, IN 3 — plus live SG 140, BR 71, CNGR 24 ≈ 760 total.
 
 ## Onboarding recipe (current, per region)
 

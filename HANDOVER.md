@@ -16,8 +16,8 @@ Zoom APIs ──(collector.js, script item INSIDE Zabbix, 5-min cycle)──► 
                        SeaTalk group alerts ◄──(webhook media types)────┘
 ```
 
-Live regions: **SG (139 rooms)** and **CNGR (24 rooms)** of ~760 in the Zoom
-account. The **Zoom location directory is the single source of truth** for
+Live regions: **SG (140 rooms)**, **CNGR (24)** and **BR (71)** of ~760 in the
+Zoom account. The **Zoom location directory is the single source of truth** for
 region membership — room naming conventions are NOT trusted (test/VIP rooms
 break them deliberately).
 
@@ -26,9 +26,9 @@ break them deliberately).
 | Object | ID / name |
 |---|---|
 | Collector script item (carrier, ALL regions) | `zoom.bridge.run` itemid **6528238** on `SG-Fleet-Summary`, 300s, 60s timeout |
-| CNGR cycle-summary trapper | `zoom.bridge.run` itemid **6595415** on `CNGR-Fleet-Summary` |
+| Non-carrier cycle-summary trappers | `zoom.bridge.run` — CNGR **6595415**, BR **6627736** (on their fleet hosts) |
 | Watchdogs | `nodata(zoom.bridge.run,10m)` High trigger per fleet host |
-| Host groups | `Rooms/Singapore` = **507**, `Rooms/CNGR` = **512** |
+| Host groups | `Rooms/Singapore` = **507**, `Rooms/CNGR` = **512**, `Rooms/BR` = **513** |
 | Templates | room **40602**, devices **40603**, fleet **40604** |
 | SeaTalk media type | `Seatalk-ZoomRooms` = **153**, shared by every scope; posts to the URL in `{ALERT.SENDTO}`, so the message format lives in ONE place (per-destination clones 151/152 deleted 2026-08-18) |
 | Trigger actions (one per scope) | CNGR **280**, SG **281**, SG-GLX **282**, SG-RC **283**, SG-5SPD **284** — host group + severity ≥ Average (+ `building` tag for building scopes), problem + recovery |
@@ -93,7 +93,7 @@ user a `! cd ... && ...` one-liner.
 | Collector code change | edit `collector.js` → `./run_install_collector.sh` (once — serves all regions) |
 | New region | TODO.md has the recipe + efficiency plan; docs/SETUP.md "Setting up another country" |
 | New SeaTalk destination (region or building) | group + System Account webhook (SeaTalk desktop, manual) → `.env` var → `SCOPES` entry in `setup_seatalk.py` → run. Building tag values come from the host `building` tag (see Zabbix host tags, e.g. GLX/RC/5SPD/LCS/Cogent/Pandan) |
-| Health check | `zoom.bridge.run` lastvalue on both fleet hosts — `{"regions":{"SG":{"rooms":139,...,"failed":0},...}}`; `failed:4` ≈ one unprovisioned room (4 items) → run provision |
+| Health check | `zoom.bridge.run` lastvalue on the carrier fleet host — `{"regions":{"SG":{...,"failed":0},...}}`. `failed:N` in multiples of 4 ≈ N/4 rooms whose 4 trapper items reject pushes: either the room has no Zabbix host (run provision) or the host was **just** provisioned and Zabbix's configuration cache has not picked it up yet — that clears itself within a few cycles, so re-check before digging |
 | Alert format change | edit `MT_SCRIPT`/`MT_TEMPLATES` in `setup_seatalk.py` and re-run (converges media type 153 — one place, all scopes); preview by POSTing to a webhook directly |
 
 ## Gotchas (each cost us a debugging session)
@@ -116,6 +116,18 @@ user a `! cd ... && ...` one-liner.
 4. **SG-Fleet-Summary reinstalls overwrite macros** with `.env` values — fine
    today (one Zoom account), but revisit if a region ever gets its own creds.
 5. Zabbix's default "User" role doesn't exist on this server — use "Viewer".
+6. **`failed:N` right after provisioning is a red herring** (2026-08-18): new
+   hosts' items are rejected by `history.push` until the server's
+   configuration syncer picks them up; the same pushes replayed by hand
+   succeed, and the next cycles report `failed:0`. Wait two cycles before
+   investigating.
+7. **Device rotation is a GLOBAL budget** (`subset_size`, default 30), not
+   per region: 30 sequential Zoom calls fit the 60s script timeout no matter
+   how many regions exist. Adding regions lengthens the sweep instead
+   (`ceil(total_rooms/subset)*interval` must stay under `DEVICE_STALE_WINDOW`,
+   1h today, raise to 3h near ~700 rooms). A slice may sit entirely in one
+   region for a cycle — the window walks the name-sorted fleet, so that is
+   expected, not a bug. Check: `node bridge/test_collector_subset.js`.
 
 ## Where things are documented
 
