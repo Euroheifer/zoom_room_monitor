@@ -114,7 +114,8 @@ user a `! cd ... && ...` one-liner.
 
 - Confluence (space `~luhl@sea.com`, under "Zoom Room Monitoring — Build
   Guide"): SeaTalk Alert Setup Guide (pageId **270649541**), Roadmap &
-  Pending Work (pageId **270649652**).
+  Pending Work (pageId **270649652**), Add a New Region step-by-step
+  (pageId **270650415**, newbie-friendly, MY as worked example).
 - SeaTalk groups: "CNGR Zoom Room Alerts", "SG Zoom Room Alerts" (user owns
   them; webhooks in `.env`).
 - Claude memory mirrors the headlines; this file and TODO.md are canonical.
