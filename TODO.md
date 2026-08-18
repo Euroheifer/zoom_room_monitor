@@ -23,21 +23,23 @@ source of truth for region membership.
   N-times maintenance of every dashboard fix. Needs the building/floor
   template-var regexes generalized (or switched to host tags).
 
-## 2. Per-building SeaTalk groups (design agreed, not built)
+## 2. Per-building SeaTalk groups — DONE for SG (2026-08-18)
 
-Hosts already carry `region`/`building`/`floor` tags from the location
-directory; trigger actions can filter on them — no provisioning changes.
+Shipped: one shared media type (**153** `Seatalk-ZoomRooms`, webhook from
+`{ALERT.SENDTO}`) + one user and one action per scope, driven by the `SCOPES`
+table in `setup_seatalk.py`. SG buildings live: **GLX 282**, **RC 283**,
+**5SPD 284**; region scopes SG **281** / CNGR **280** migrated onto the shared
+media type; old clones 151/152 and user 146 deleted. Region and building groups
+overlap by design (regional IT keeps the full view).
 
-- [ ] Refactor `setup_seatalk.py` to a **scopes** table:
-  `{name, tags: {region, building?}, webhook_env}`; one action per scope.
-- [ ] Replace per-destination media-type clones with **one shared media type**
-  reading the webhook URL from `{ALERT.SENDTO}` (destination = one media row
-  on `svc-zoomrooms-seatalk`). Migrate media types 151/152 so message
-  formatting lives in one place.
-- [ ] Pilot with one building (e.g. CNGR SH-CaoHeJing): human creates the
-  SeaTalk group + System Account webhook, wire it, watch volume before
-  rolling out. Skip dedicated groups for tiny sites (3-room sites alert
-  ~monthly — share a city group instead).
+- [ ] CNGR buildings when wanted — add `SCOPES` rows with
+  `{"building": "SH-CaoHeJing"}` etc. (tag values: see CNGR host tags), one
+  SeaTalk group + webhook each, re-run the script. No code change needed.
+- [ ] If the SG region group gets noisy from the duplication, add negative tag
+  conditions (`building <> GLX/RC/5SPD`) to action 281.
+- [ ] Optional: raise GLX's severity floor to High only (~20 alerts/day today,
+  half of them Medium) — `MIN_SEVERITY` is currently global, so this needs a
+  per-scope override.
 
 ## 3. Watch items / small stuff
 

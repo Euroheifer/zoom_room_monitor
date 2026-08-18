@@ -30,15 +30,16 @@ break them deliberately).
 | Watchdogs | `nodata(zoom.bridge.run,10m)` High trigger per fleet host |
 | Host groups | `Rooms/Singapore` = **507**, `Rooms/CNGR` = **512** |
 | Templates | room **40602**, devices **40603**, fleet **40604** |
-| SeaTalk media types | `Seatalk-ZoomRooms-CNGR` = **151**, `-SG` = **152** (webhook URL baked into each script) |
-| Trigger actions | `Zoom Rooms CNGR - SeaTalk alerts` = **280**, `... SG ...` = **281** (host group + severity ≥ Average, problem + recovery) |
-| Alert identity | usergroup **88** `Zoom Rooms Alerts`, user **146** `svc-zoomrooms-seatalk` (Viewer, one media per destination, sendto `-`) |
+| SeaTalk media type | `Seatalk-ZoomRooms` = **153**, shared by every scope; posts to the URL in `{ALERT.SENDTO}`, so the message format lives in ONE place (per-destination clones 151/152 deleted 2026-08-18) |
+| Trigger actions (one per scope) | CNGR **280**, SG **281**, SG-GLX **282**, SG-RC **283**, SG-5SPD **284** — host group + severity ≥ Average (+ `building` tag for building scopes), problem + recovery |
+| Alert identity | usergroup **88** `Zoom Rooms Alerts` (read on all `Rooms/*`); one user per scope: `svc-zoom-sg` **147**, `-cngr` **148**, `-sg-glx` **149**, `-sg-rc` **150**, `-sg-5spd` **151** — each holds exactly ONE media row whose `sendto` IS its group's webhook URL. One user per scope is mandatory: an action sends to ALL of a user's media rows of that type |
 | Grafana dashboards | company Grafana: fleet SG (`zoom-sg-poc`), fleet CNGR (`zoom-cngr-poc`), room detail (`zoom-room-detail`, region-agnostic) — import via `deploy/upload-to-grafana/` symlinks (UI upload, overwrite) |
 
 Secrets live in `bridge/.env` (gitignored): `ZOOM_ACCOUNT_ID / ZOOM_CLIENT_ID /
 ZOOM_CLIENT_SECRET` (S2S OAuth), `ZBX_API_URL / ZBX_API_TOKEN` (super-admin),
-`ZBX_SSL_VERIFY=false` (self-signed cert), `SEATALK_WEBHOOK_URL` (CNGR group),
-`SEATALK_WEBHOOK_URL_SG`. SeaTalk webhook URLs are post-to-group credentials —
+`ZBX_SSL_VERIFY=false` (self-signed cert), `SEATALK_WEBHOOK_URL` (CNGR),
+`SEATALK_WEBHOOK_URL_SG`, `SEATALK_WEBHOOK_URL_SG_GLX`, `..._SG_RC`,
+`..._SG_5SPD`. SeaTalk webhook URLs are post-to-group credentials —
 never commit or publish them.
 
 ## How the pieces work
@@ -58,8 +59,14 @@ never commit or publish them.
   new hosts (old one keeps history until deleted). `LOCATION_OVERRIDES` pins
   "SG-Office" (private VIP room) to GLX/17F so its real location stays off
   helpdesk dashboards.
-- **setup_seatalk.py CNGR|SG**: idempotent — clones house media type 42 with
-  the region webhook + chat-friendly templates, ensures usergroup/user/action.
+- **setup_seatalk.py [scope...]**: idempotent, no args = every scope whose
+  webhook env var is set. A scope is a region or a building inside one
+  (`SCOPES` table: host group + optional host tags). Building routing works
+  because Zabbix copies host tags (`region`/`building`/`floor`, set by
+  provisioning from the directory) onto events — condition type 26, tag name
+  in `value2`. Region and building scopes overlap on purpose (regional IT
+  keeps the full view); to stop that, add negative tag conditions to the
+  region action.
 - **SeaTalk message format** (iterated with the user; lives in media type JS +
   message templates, and in `setup_seatalk.py` for fresh installs): payload
   `{"tag":"text","text":{"format":1,"content":...}}` — **format:1 renders
@@ -85,9 +92,9 @@ user a `! cd ... && ...` one-liner.
 | Rooms added/renamed in Zoom | `LOCATION_ROOT=SG ./run_provision.sh` (per region; CNGR: `LOCATION_ROOT=CNGR REGION_PREFIX=CNGR HOST_GROUP=Rooms/CNGR STRIP_CAMPUS_PREFIX=0`) |
 | Collector code change | edit `collector.js` → `./run_install_collector.sh` (once — serves all regions) |
 | New region | TODO.md has the recipe + efficiency plan; docs/SETUP.md "Setting up another country" |
-| New SeaTalk destination | group + System Account webhook (SeaTalk desktop, manual) → `.env` var → `setup_seatalk.py` entry → run |
+| New SeaTalk destination (region or building) | group + System Account webhook (SeaTalk desktop, manual) → `.env` var → `SCOPES` entry in `setup_seatalk.py` → run. Building tag values come from the host `building` tag (see Zabbix host tags, e.g. GLX/RC/5SPD/LCS/Cogent/Pandan) |
 | Health check | `zoom.bridge.run` lastvalue on both fleet hosts — `{"regions":{"SG":{"rooms":139,...,"failed":0},...}}`; `failed:4` ≈ one unprovisioned room (4 items) → run provision |
-| Alert format change | `mediatype.update` on 151/152 (templates and/or script) AND mirror in `setup_seatalk.py`; preview by POSTing to the webhook directly |
+| Alert format change | edit `MT_SCRIPT`/`MT_TEMPLATES` in `setup_seatalk.py` and re-run (converges media type 153 — one place, all scopes); preview by POSTing to a webhook directly |
 
 ## Gotchas (each cost us a debugging session)
 
