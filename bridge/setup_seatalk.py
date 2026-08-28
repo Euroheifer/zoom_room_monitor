@@ -41,11 +41,11 @@ BUILDING_SCOPES = {
     # SG buildings — GLX ~20 alerts/day, RC ~6, 5SPD ~3 (14d sample, 2026-08-18).
     # Small sites (Cogent/LCS/Pandan/home) and the fleet watchdog stay with SG:
     # SG-Fleet-Summary carries no building tag, so only the region scope sees it.
-    "SG-GLX":  {"hostgroup": "Rooms/Singapore", "tags": {"building": "GLX"},
+    "SG-GLX":  {"hostgroup": "Rooms/SG", "tags": {"building": "GLX"},
                 "webhook_env": "SEATALK_WEBHOOK_URL_SG_GLX"},
-    "SG-RC":   {"hostgroup": "Rooms/Singapore", "tags": {"building": "RC"},
+    "SG-RC":   {"hostgroup": "Rooms/SG", "tags": {"building": "RC"},
                 "webhook_env": "SEATALK_WEBHOOK_URL_SG_RC"},
-    "SG-5SPD": {"hostgroup": "Rooms/Singapore", "tags": {"building": "5SPD"},
+    "SG-5SPD": {"hostgroup": "Rooms/SG", "tags": {"building": "5SPD"},
                 "webhook_env": "SEATALK_WEBHOOK_URL_SG_5SPD"},
     # BR buildings — FLP 44 rooms, B32 15; HYP 10 / FBSSP9 1 / SFB 1 and the
     # fleet watchdog stay with the BR region scope.

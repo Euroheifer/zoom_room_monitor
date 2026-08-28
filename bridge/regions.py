@@ -5,7 +5,7 @@ Adding a region is one line here, then ./run_onboard.sh <REGION>.
 """
 
 REGIONS = {
-    "SG":   {"host_group": "Rooms/Singapore"},          # pre-dates the Rooms/<KEY> convention
+    "SG":   {},
     "CNGR": {"webhook_env": "SEATALK_WEBHOOK_URL",      # legacy unsuffixed var name
              "strip_campus_prefix": False},             # campus names carry the city (BJ-JinHui)
     "BR":   {},
@@ -31,7 +31,7 @@ def region(name):
 
 
 if __name__ == "__main__":  # must match what the 3 live regions run with today
-    assert region("SG")["host_group"] == "Rooms/Singapore"
+    assert region("SG")["host_group"] == "Rooms/SG"
     assert region("SG")["strip_campus_prefix"] is True
     assert region("CNGR") == {
         "region_prefix": "CNGR", "location_root": "CNGR", "host_group": "Rooms/CNGR",

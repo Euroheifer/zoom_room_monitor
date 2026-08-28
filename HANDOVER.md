@@ -28,7 +28,7 @@ break them deliberately).
 | Collector script item (carrier, ALL regions) | `zoom.bridge.run` itemid **6528238** on `SG-Fleet-Summary`, 300s, 60s timeout |
 | Non-carrier cycle-summary trappers | `zoom.bridge.run` — CNGR **6595415**, BR **6627736** (on their fleet hosts) |
 | Watchdogs | `nodata(zoom.bridge.run,10m)` High trigger per fleet host |
-| Host groups | `Rooms/Singapore` = **507**, `Rooms/CNGR` = **512**, `Rooms/BR` = **513** |
+| Host groups | `Rooms/SG` = **507** (renamed from `Rooms/Singapore` 2026-08-28; groupid preserved, so actions/permissions followed), `Rooms/CNGR` = **512**, `Rooms/BR` = **513** |
 | Templates | room **40602**, devices **40603**, fleet **40604** |
 | SeaTalk media type | `Seatalk-ZoomRooms` = **153**, shared by every scope; posts to the URL in `{ALERT.SENDTO}`, so the message format lives in ONE place (per-destination clones 151/152 deleted 2026-08-18) |
 | Trigger actions (one per scope) | CNGR **280**, SG **281**, SG-GLX **282**, SG-RC **283**, SG-5SPD **284** — host group + severity ≥ Average (+ `building` tag for building scopes), problem + recovery |
@@ -52,8 +52,8 @@ never commit or publish them.
   regions get their cycle summary pushed to their fleet host's trapper.
   Zabbix JS is Duktape (ES5) — no `let/const/=>/`template literals`.
 - **regions.py**: the region manifest — one row per region, every field
-  derived from the key unless the row overrides it (SG's legacy
-  `Rooms/Singapore` group, CNGR's legacy webhook var and kept city prefixes).
+  derived from the key unless the row overrides it (only CNGR still overrides:
+  its legacy webhook var and kept city prefixes).
   `provision.py`, `install_collector.py` and `setup_seatalk.py` all read it, so
   a region is defined in exactly one place. `python3 regions.py` self-checks
   that the table still resolves to what the live regions run with.

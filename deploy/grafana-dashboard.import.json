@@ -103,7 +103,7 @@
       }
      ],
      "group": {
-      "filter": "Rooms/Singapore"
+      "filter": "Rooms/SG"
      },
      "host": {
       "filter": "/^SG-${building:regex}-${floor:regex}-/"
@@ -228,7 +228,7 @@
       }
      ],
      "group": {
-      "filter": "Rooms/Singapore"
+      "filter": "Rooms/SG"
      },
      "host": {
       "filter": "/^SG-${building:regex}-${floor:regex}-/"
@@ -302,7 +302,7 @@
      },
      "functions": [],
      "group": {
-      "filter": "Rooms/Singapore"
+      "filter": "Rooms/SG"
      },
      "host": {
       "filter": "SG Fleet Summary"
@@ -492,7 +492,7 @@
       "filter": ""
      },
      "group": {
-      "filter": "Rooms/Singapore"
+      "filter": "Rooms/SG"
      },
      "host": {
       "filter": "/^SG-${building:regex}-${floor:regex}-/"
@@ -740,7 +740,7 @@
       "filter": ""
      },
      "group": {
-      "filter": "Rooms/Singapore"
+      "filter": "Rooms/SG"
      },
      "host": {
       "filter": "/^SG-${building:regex}-${floor:regex}-/"
@@ -870,7 +870,7 @@
      },
      "functions": [],
      "group": {
-      "filter": "Rooms/Singapore"
+      "filter": "Rooms/SG"
      },
      "host": {
       "filter": "/^SG-${building:regex}-${floor:regex}-/"
@@ -1040,7 +1040,7 @@
       "filter": ""
      },
      "group": {
-      "filter": "Rooms/Singapore"
+      "filter": "Rooms/SG"
      },
      "host": {
       "filter": "/^SG-${building:regex}-${floor:regex}-/"
@@ -1100,7 +1100,7 @@
      "type": "alexanderzobnin-zabbix-datasource",
      "uid": "${DS_ZABBIX}"
     },
-    "query": "Rooms/Singapore.*",
+    "query": "Rooms/SG.*",
     "regex": "/^SG-(?<value>[^-]+)-[^-]+-/",
     "multi": true,
     "includeAll": true,
@@ -1126,7 +1126,7 @@
      "type": "alexanderzobnin-zabbix-datasource",
      "uid": "${DS_ZABBIX}"
     },
-    "query": "Rooms/Singapore.*",
+    "query": "Rooms/SG.*",
     "regex": "/^SG-[^-]+-(?<value>[^-]+)-/",
     "multi": true,
     "includeAll": true,
