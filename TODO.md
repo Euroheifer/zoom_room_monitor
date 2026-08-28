@@ -1,8 +1,9 @@
 # TODO / Roadmap
 
-Pending work as of 2026-08-14. Context: SG (139 rooms) + CNGR (24) live on
-company Zabbix/Grafana with SeaTalk alerting; location directory is the single
-source of truth for region membership.
+Pending work as of 2026-08-28. Context: SG (140 rooms), CNGR (24) and BR (71)
+live on company Zabbix/Grafana with SeaTalk alerting; location directory is the
+single source of truth for region membership, and `bridge/regions.py` is the one
+place a region is defined.
 
 ## 1. Scale-out prerequisites (do before mass region onboarding)
 
@@ -11,11 +12,14 @@ source of truth for region membership.
   flat as regions are added. Verified live with 3 regions (235 rooms, ~40min
   sweep, under the 1h `DEVICE_STALE_WINDOW`). Check:
   `node bridge/test_collector_subset.js`.
-- [ ] **Single region manifest** — region list currently lives in 3 places:
-  `install_collector.py` REGIONS, `setup_seatalk.py` REGIONS, and env vars
-  typed for provisioning. One `regions.py` table consumed by all three + an
-  `onboard.py <REGION>` that provisions, reinstalls the collector, and wires
-  alerts in one run.
+- [x] **Single region manifest** — DONE 2026-08-28: `bridge/regions.py` is the
+  one place a region is defined (fields derived from the key; only SG's legacy
+  host group and CNGR's legacy webhook var + kept city prefixes are overrides).
+  `provision.py <REGION>`, `install_collector.py` and `setup_seatalk.py` all
+  read it; the name-prefix fallback in `select_rooms` is gone, so an unknown
+  region or an empty directory subtree fails loudly. `./run_onboard.sh <REGION>`
+  chains provisioning + collector reinstall; SeaTalk and dashboards stay manual.
+  Check: `python3 bridge/regions.py`.
 - [ ] **Templated fleet dashboard** — replace per-region dashboard copies with
   one dashboard using a `$region` host-group variable (room-detail already
   works this way). Removes the copy/swap/import step per region and the
@@ -39,7 +43,7 @@ overlap by design (regional IT keeps the full view).
   SeaTalk group + `SEATALK_WEBHOOK_URL_BR` in `.env`, then
   `python3 setup_seatalk.py BR` (scope already in the table). Until then
   watch BR on the dashboard / Zabbix Problems.
-- [ ] CNGR buildings when wanted — add `SCOPES` rows with
+- [ ] CNGR buildings when wanted — add `BUILDING_SCOPES` rows with
   `{"building": "SH-CaoHeJing"}` etc. (tag values: see CNGR host tags), one
   SeaTalk group + webhook each, re-run the script. No code change needed.
 - [ ] If the SG region group gets noisy from the duplication, add negative tag
@@ -73,8 +77,7 @@ MY 29, TW 20, MX 7, KR 5, IN 3 — plus live SG 140, BR 71, CNGR 24 ≈ 760 tota
 
 ## Onboarding recipe (current, per region)
 
-See docs/SETUP.md "Setting up another country". Short form: verify directory
-node → `LOCATION_ROOT=XX REGION_PREFIX=XX HOST_GROUP=Rooms/XX
-./run_provision.sh` → add REGIONS entry in `install_collector.py` + reinstall
-→ SeaTalk group/webhook + `setup_seatalk.py` entry + run → dashboard copy
+See docs/SETUP.md "Setting up another country". Short form: verify the
+directory node → add `"XX": {}` to `bridge/regions.py` → `./run_onboard.sh XX`
+→ SeaTalk group/webhook in `.env` + `setup_seatalk.py XX` → dashboard copy
 (until the templated dashboard above lands).

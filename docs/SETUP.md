@@ -44,13 +44,11 @@ ZBX_API_URL=https://<your-zabbix>/api_jsonrpc.php
 ZBX_API_TOKEN=<your Zabbix API token>
 ZBX_TRAPPER_HOST=<your-zabbix-host>                   # only for optional manual testing
 ZBX_SSL_VERIFY=false                                  # only if the cert chain is self-signed
-REGION_PREFIX=SG                                      # region code: name prefix + host/dashboard naming
-# When rooms DON'T share a name prefix, select them by location-directory
-# subtree instead (this is how CNGR runs):
-#LOCATION_ROOT=CNGR                                   # directory node name
-#HOST_GROUP=Rooms/CNGR                                # Zabbix host group (default Rooms/Singapore)
-#STRIP_CAMPUS_PREFIX=0                                # keep city-prefixed campus names (BJ-JinHui)
 ```
+
+Region config is **not** in `.env` — it lives in `bridge/regions.py`, and every
+script takes the region as an argument. Only the per-region SeaTalk webhook URLs
+belong here (`SEATALK_WEBHOOK_URL_<REGION>`; see "Setting up another country").
 
 ## Step 2 — Gate check: Zoom scopes
 
@@ -170,17 +168,20 @@ The Zoom **location directory is the single source of truth** for which rooms
 belong to a region — room naming conventions are not trusted (test/VIP rooms
 don't follow them).
 
-1. Provisioning (per region, env-driven): in `.env` set `REGION_PREFIX=TH`,
-   `HOST_GROUP=Rooms/TH`, and `LOCATION_ROOT=TH` (the region's directory node
-   name). Add `STRIP_CAMPUS_PREFIX=0` if campus names carry meaningful
-   prefixes (cities). Run the provisioning step.
-2. Collector (one item serves ALL regions): add the region to the `REGIONS`
-   table in `install_collector.py` — `{"name": "TH"}`; selection is always the
-   directory subtree under the node named after the region (add
-   `"location_root"` only if the node name differs). Re-run
-   `./run_install_collector.sh` once. The account-wide Zoom sweep is shared;
-   the region's fleet host gets a `zoom.bridge.run` trapper + nodata watchdog.
-3. Copy the fleet dashboard JSON: swap group filter, region regex prefixes,
+1. Add one row to `bridge/regions.py`, keyed by the region's directory node
+   name: `"TH": {}`. Everything is derived from that key — host group
+   `Rooms/TH`, fleet host `TH-Fleet-Summary`, webhook var
+   `SEATALK_WEBHOOK_URL_TH`. List a field only when it differs, e.g.
+   `{"strip_campus_prefix": False}` when campus names carry meaningful city
+   prefixes (this is why CNGR keeps `BJ-JinHui`).
+2. `./run_onboard.sh TH` — provisions the region's hosts from its directory
+   subtree, then reinstalls the collector so it knows the new region. The
+   account-wide Zoom sweep is shared; the region's fleet host gets a
+   `zoom.bridge.run` trapper + nodata watchdog. Both steps are idempotent.
+3. Alerts: create the SeaTalk group + System Account webhook by hand, put the
+   URL in `.env` as `SEATALK_WEBHOOK_URL_TH`, then `python3 setup_seatalk.py TH`.
+   The scope is generated from `regions.py` — no code change needed.
+4. Copy the fleet dashboard JSON: swap group filter, region regex prefixes,
    title, and `uid`; import (see `deploy/grafana-dashboard-cngr.json` for a
    worked example). The room-detail dashboard needs no copy.
 
@@ -188,11 +189,11 @@ don't follow them).
 
 | Situation | Action |
 | --- | --- |
-| Rooms added / renamed in Zoom | `./run_provision.sh`. Renames create a new host — delete the old one if history isn't needed |
+| Rooms added / renamed in Zoom | `./run_provision.sh <REGION>`. Renames create a new host — delete the old one if history isn't needed |
 | Room moved building/floor | Fix the Zoom **location directory**, re-run provisioning |
 | Zoom secret / Zabbix token rotated | Update `.env`, re-run `./run_install_collector.sh` |
 | Collector health | Latest value of `zoom.bridge.run`; the watchdog fires on silence |
-| Tune thresholds | Edit `provision.py` / env vars, re-run — triggers update in place |
+| Tune thresholds | Edit `provision.py`, re-run — triggers update in place |
 
 ## Troubleshooting
 

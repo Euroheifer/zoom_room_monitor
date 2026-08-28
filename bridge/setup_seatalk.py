@@ -31,13 +31,13 @@ import ssl
 import sys
 import urllib.request
 
-# hostgroup is the Zabbix host group NAME (resolved to an id at run time, so a
-# newly provisioned region needs no id lookup); tags {} = whole region.
-SCOPES = {
-    # region-wide
-    "SG":      {"hostgroup": "Rooms/Singapore", "tags": {}, "webhook_env": "SEATALK_WEBHOOK_URL_SG"},
-    "CNGR":    {"hostgroup": "Rooms/CNGR", "tags": {}, "webhook_env": "SEATALK_WEBHOOK_URL"},
-    "BR":      {"hostgroup": "Rooms/BR", "tags": {}, "webhook_env": "SEATALK_WEBHOOK_URL_BR"},
+from regions import REGIONS, region
+
+# Region scopes come from the manifest; building scopes are hand-written (a
+# building isn't derivable from a region name, and each needs a SeaTalk group
+# created by hand). hostgroup is the Zabbix host group NAME, resolved to an id
+# at run time, so a newly provisioned region needs no id lookup.
+BUILDING_SCOPES = {
     # SG buildings — GLX ~20 alerts/day, RC ~6, 5SPD ~3 (14d sample, 2026-08-18).
     # Small sites (Cogent/LCS/Pandan/home) and the fleet watchdog stay with SG:
     # SG-Fleet-Summary carries no building tag, so only the region scope sees it.
@@ -54,6 +54,11 @@ SCOPES = {
     "BR-B32":  {"hostgroup": "Rooms/BR", "tags": {"building": "B32"},
                 "webhook_env": "SEATALK_WEBHOOK_URL_BR_B32"},
 }
+SCOPES = {name: {"hostgroup": region(name)["host_group"], "tags": {},
+                 "webhook_env": region(name)["webhook_env"]}
+          for name in REGIONS}
+SCOPES.update(BUILDING_SCOPES)
+
 MIN_SEVERITY = "3"          # Average and above (device disconnects + offline)
 MT_NAME = "Seatalk-ZoomRooms"
 UG_NAME = "Zoom Rooms Alerts"

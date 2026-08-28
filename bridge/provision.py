@@ -1,14 +1,15 @@
-"""Provision Zabbix for the POC (idempotent).
+"""Provision Zabbix for one region (idempotent).
 
 Creates:
-  * host group     Rooms/Singapore
+  * host group     the region's group (regions.py)
   * template group Templates/Zoom
   * template       "Template Zoom Room"          -> status/online + offline trigger
   * template       "Template Zoom Room Devices"  -> device status + disconnect triggers
-  * one host per SG room, linked to both templates (the poller's device subset is
-    dynamic, so every host must accept device items), tagged region/building/floor.
+  * one host per room in the region's directory subtree, linked to both templates
+    (the collector's device subset is dynamic, so every host must accept device
+    items), tagged region/building/floor.
 
-Run:  ./run_provision.sh         (loads .env, runs in the venv)
+Run:  ./run_provision.sh SG      (loads .env, runs in the venv)
 """
 from __future__ import annotations
 
@@ -20,16 +21,12 @@ import re
 from zoom_client import ZoomClient
 from zabbix_client import ZabbixAPI
 from mapper import sanitize_host_name, parse_tags
+from regions import REGIONS, region
 
-REGION_PREFIX = os.environ.get("REGION_PREFIX", "SG")
-# Room selection: by name prefix (REGION_PREFIX) by default, or — when rooms
-# don't share a name prefix (e.g. CNGR = CNBJ-/CNSH-) — by location-directory
-# subtree: set LOCATION_ROOT to the directory node name (e.g. "CNGR").
-LOCATION_ROOT = os.environ.get("LOCATION_ROOT", "")
-HOST_GROUP = os.environ.get("HOST_GROUP", "Rooms/Singapore")
-# Campus names like SGP-GLX carry a redundant site prefix; CNGR campuses like
-# BJ-JinHui carry the CITY, which must be kept. Set 0 to keep the full name.
-STRIP_CAMPUS_PREFIX = os.environ.get("STRIP_CAMPUS_PREFIX", "1") == "1"
+# Set once in main() from the region named on the command line (see regions.py).
+# Deferred rather than read at import time because test_provision.py imports
+# this module and pytest's argv would poison it.
+REGION_PREFIX = LOCATION_ROOT = HOST_GROUP = STRIP_CAMPUS_PREFIX = None
 # Must exceed the device sweep time: ceil(rooms/subset) * poll interval.
 # 135 rooms / 15 per 5m cycle ~= 45m -> 1h. At the 700-room final design,
 # raise to 3h (subset 30 -> ~2h sweep).
@@ -38,8 +35,7 @@ DEVICE_STALE_WINDOW = os.environ.get("DEVICE_STALE_WINDOW", "1h")
 ROOM_TEMPLATE = "Template Zoom Room"
 DEV_TEMPLATE = "Template Zoom Room Devices"
 FLEET_TEMPLATE = "Template Zoom Fleet"
-FLEET_HOST_TECH = f"{REGION_PREFIX}-Fleet-Summary"
-FLEET_HOST_NAME = f"{REGION_PREFIX} Fleet Summary"
+FLEET_HOST_TECH = FLEET_HOST_NAME = None  # likewise, set in main()
 
 # Zabbix value types
 T_UNSIGNED, T_TEXT = 3, 4
@@ -291,10 +287,13 @@ def fetch_region_rooms(client, locs=None):
         tok = r.get("next_page_token") or ""
         if not tok:
             break
-    if LOCATION_ROOT:
-        sub = location_subtree(locs, LOCATION_ROOT)
-        return [x for x in rooms if x.get("location_id") in sub]
-    return [x for x in rooms if x.get("name", "").upper().startswith(REGION_PREFIX.upper())]
+    # The location directory is the single source of truth — room naming
+    # conventions are not trusted (test/VIP rooms break them deliberately).
+    sub = location_subtree(locs, LOCATION_ROOT)
+    if not sub:
+        raise SystemExit(f"no directory subtree named {LOCATION_ROOT!r} — "
+                         "refusing to provision zero rooms")
+    return [x for x in rooms if x.get("location_id") in sub]
 
 
 def ensure_hosts(api, rooms, locs, hg_id, room_tpl, dev_tpl):
@@ -331,6 +330,22 @@ def ensure_hosts(api, rooms, locs, hg_id, room_tpl, dev_tpl):
 
 
 def main():
+    # ponytail: module constants set once at startup, same as when they came
+    # from the environment — just argv-driven now. Threading six values through
+    # location_tags/canonical_room_name/select_rooms/ensure_fleet_host would be
+    # a much larger diff for the same result.
+    global REGION_PREFIX, LOCATION_ROOT, HOST_GROUP, STRIP_CAMPUS_PREFIX
+    global FLEET_HOST_TECH, FLEET_HOST_NAME
+    if len(sys.argv) != 2:
+        raise SystemExit(f"usage: provision.py <REGION>   ({' '.join(REGIONS)})")
+    r = region(sys.argv[1])
+    REGION_PREFIX = r["region_prefix"]
+    LOCATION_ROOT = r["location_root"]
+    HOST_GROUP = r["host_group"]
+    STRIP_CAMPUS_PREFIX = r["strip_campus_prefix"]
+    FLEET_HOST_TECH = r["fleet_host"]
+    FLEET_HOST_NAME = f"{REGION_PREFIX} Fleet Summary"
+
     api = ZabbixAPI()
     api.login()
     print(">> Zabbix login OK")

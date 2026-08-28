@@ -1,7 +1,7 @@
 # HANDOVER — Zoom Room Monitor
 
 Continuation notes for the next working session (human or Claude). Last
-updated **2026-08-18**. Open work: see [`TODO.md`](TODO.md). Setup recipes:
+updated **2026-08-28**. Open work: see [`TODO.md`](TODO.md). Setup recipes:
 [`docs/SETUP.md`](docs/SETUP.md).
 
 ## What this is
@@ -45,15 +45,23 @@ never commit or publish them.
 ## How the pieces work
 
 - **collector.js** (`bridge/`): one account-wide sweep per cycle — OAuth token
-  → `/rooms` → `/rooms/locations` → `/metrics/zoomrooms` → per-region rotating
-  15-room `/rooms/{id}/devices` subset — bucketed per the `REGIONS` table in
-  `install_collector.py`, pushed via `history.push`. Rooms with Zoom status
+  → `/rooms` → `/rooms/locations` → `/metrics/zoomrooms` → a global rotating
+  30-room `/rooms/{id}/devices` subset — bucketed per the regions in
+  `regions.py`, pushed via `history.push`. Rooms with Zoom status
   `UnderConstruction` report `issues=none` (alert suppression). Non-carrier
   regions get their cycle summary pushed to their fleet host's trapper.
   Zabbix JS is Duktape (ES5) — no `let/const/=>/`template literals`.
-- **provision.py**: creates/updates hosts, host groups, templates, triggers
-  from the directory (env-driven per region: `LOCATION_ROOT`, `REGION_PREFIX`,
-  `HOST_GROUP`, `STRIP_CAMPUS_PREFIX`). Hosts are tagged
+- **regions.py**: the region manifest — one row per region, every field
+  derived from the key unless the row overrides it (SG's legacy
+  `Rooms/Singapore` group, CNGR's legacy webhook var and kept city prefixes).
+  `provision.py`, `install_collector.py` and `setup_seatalk.py` all read it, so
+  a region is defined in exactly one place. `python3 regions.py` self-checks
+  that the table still resolves to what the live regions run with.
+- **provision.py**: `provision.py <REGION>` creates/updates hosts, host groups,
+  templates and triggers from the directory, resolving the region through
+  `regions.py`. An unknown region, a missing argument, or a directory subtree
+  that matches zero rooms all exit loudly rather than provisioning something
+  plausible-but-wrong. Hosts are tagged
   `region`/`building`/`floor` from the directory — tags ride into trigger
   events (usable for per-building alert routing, see TODO §2). Renames create
   new hosts (old one keeps history until deleted). `LOCATION_OVERRIDES` pins
@@ -61,7 +69,9 @@ never commit or publish them.
   helpdesk dashboards.
 - **setup_seatalk.py [scope...]**: idempotent, no args = every scope whose
   webhook env var is set. A scope is a region or a building inside one
-  (`SCOPES` table: host group + optional host tags). Building routing works
+  (`SCOPES`: region scopes generated from `regions.py`, building scopes
+  hand-written in `BUILDING_SCOPES` — host group + optional host tags).
+  Building routing works
   because Zabbix copies host tags (`region`/`building`/`floor`, set by
   provisioning from the directory) onto events — condition type 26, tag name
   in `value2`. Region and building scopes overlap on purpose (regional IT
@@ -89,10 +99,10 @@ user a `! cd ... && ...` one-liner.
 
 | Task | Command |
 |---|---|
-| Rooms added/renamed in Zoom | `LOCATION_ROOT=SG ./run_provision.sh` (per region; CNGR: `LOCATION_ROOT=CNGR REGION_PREFIX=CNGR HOST_GROUP=Rooms/CNGR STRIP_CAMPUS_PREFIX=0`) |
+| Rooms added/renamed in Zoom | `./run_provision.sh SG` (or CNGR / BR — every script takes the region as an argument; its config lives in `regions.py`) |
 | Collector code change | edit `collector.js` → `./run_install_collector.sh` (once — serves all regions) |
-| New region | TODO.md has the recipe + efficiency plan; docs/SETUP.md "Setting up another country" |
-| New SeaTalk destination (region or building) | group + System Account webhook (SeaTalk desktop, manual) → `.env` var → `SCOPES` entry in `setup_seatalk.py` → run. Building tag values come from the host `building` tag (see Zabbix host tags, e.g. GLX/RC/5SPD/LCS/Cogent/Pandan) |
+| New region | one row in `bridge/regions.py` (`"MY": {}`), then `./run_onboard.sh MY`; alerts + dashboard stay manual — docs/SETUP.md "Setting up another country" |
+| New SeaTalk destination (region or building) | group + System Account webhook (SeaTalk desktop, manual) → `.env` var → run. A region needs no code change (its scope comes from `regions.py`); a building needs a `BUILDING_SCOPES` entry in `setup_seatalk.py`. Building tag values come from the host `building` tag (see Zabbix host tags, e.g. GLX/RC/5SPD/LCS/Cogent/Pandan) |
 | Health check | `zoom.bridge.run` lastvalue on the carrier fleet host — `{"regions":{"SG":{...,"failed":0},...}}`. `failed:N` in multiples of 4 ≈ N/4 rooms whose 4 trapper items reject pushes: either the room has no Zabbix host (run provision) or the host was **just** provisioned and Zabbix's configuration cache has not picked it up yet — that clears itself within a few cycles, so re-check before digging |
 | Force a test alert | push `zoom.room.issues` = `TEST ALERT please ignore - ...` then `none` (the issue trigger flips on one value; offline needs two). **Pick a room whose issues are currently `none`** — a room already in problem state just changes the value, so no new event and no alert. Recovery messages only fire for problems that *started* after the action existed. |
 | Alert format change | edit `MT_SCRIPT`/`MT_TEMPLATES` in `setup_seatalk.py` and re-run (converges media type 153 — one place, all scopes); preview by POSTing to a webhook directly |
@@ -107,8 +117,10 @@ user a `! cd ... && ...` one-liner.
    `apiinfo.version` vs `history.get`.
 2. **Env-var regression class (fixed, stay dead)**: region selection once
    depended on install-time env vars; a reinstall without `LOCATION_ROOT`
-   silently zeroed CNGR for ~3.5h (2026-08-14 gap on charts). Region config
-   now lives ONLY in the installer's REGIONS table.
+   silently zeroed CNGR for ~3.5h (2026-08-14 gap on charts). Since 2026-08-28
+   region config lives ONLY in `bridge/regions.py`, scripts take the region as
+   an argument, and the name-prefix fallback in `select_rooms` is deleted — an
+   unknown region or an empty subtree now fails instead of guessing.
 3. **Confluence quirks** (confluence.garenanow.com): rejects 4-byte emoji in
    page bodies (write `(red circle)` etc.); the MCP page-update endpoint
    fails against this server — **delete + recreate** is the workaround (page
@@ -142,8 +154,9 @@ user a `! cd ... && ...` one-liner.
 
 ## Immediate next steps (agreed with the user)
 
-1. Global device-rotation budget in collector.js (gates mass onboarding).
-2. Single region manifest + `onboard.py`.
+1. ~~Global device-rotation budget in collector.js~~ — done 2026-08-18.
+2. ~~Single region manifest + onboarding wrapper~~ — done 2026-08-28
+   (`regions.py`, `run_onboard.sh`).
 3. Templated `$region` fleet dashboard.
 4. Per-building SeaTalk scopes (design in TODO §2) — pilot SH-CaoHeJing once
    the user creates its SeaTalk group and provides the webhook.

@@ -13,17 +13,14 @@ import os
 import pathlib
 
 from zabbix_client import ZabbixAPI
+from regions import REGIONS, region
 
-# one entry per region. Rooms are selected by the Zoom location-directory
-# subtree under the node named after the region — the directory is the single
-# source of truth (room naming conventions are not trusted: test/VIP rooms
-# don't follow them). Optional keys: location_root (if the directory node is
-# named differently), fleet_host.
-REGIONS = [
-    {"name": "SG"},
-    {"name": "CNGR"},
-    {"name": "BR"},
-]
+# Rooms are selected by the Zoom location-directory subtree under the node named
+# after the region — the directory is the single source of truth (room naming
+# conventions are not trusted: test/VIP rooms don't follow them). collector.js
+# defaults location_root and fleet_host from the name exactly as regions.py
+# does, so only the names need to travel.
+COLLECTOR_REGIONS = [{"name": name} for name in REGIONS]
 CARRIER = "SG-Fleet-Summary"  # host carrying the script item
 KEY = "zoom.bridge.run"
 SCRIPT = (pathlib.Path(__file__).parent / "collector.js").read_text()
@@ -42,7 +39,7 @@ PARAMETERS = [
     {"name": "client_secret", "value": "{$ZOOM.CLIENT.SECRET}"},
     {"name": "zbx_url", "value": "{$ZOOM.ZBX.URL}"},
     {"name": "zbx_token", "value": "{$ZOOM.ZBX.TOKEN}"},
-    {"name": "regions", "value": json.dumps(REGIONS)},
+    {"name": "regions", "value": json.dumps(COLLECTOR_REGIONS)},
     {"name": "carrier_fleet_host", "value": CARRIER},
     # Device-detail rotation budget, GLOBAL across regions: Zoom calls per cycle
     # = subset_size regardless of region count (30 sequential calls fits the 60s
@@ -54,16 +51,16 @@ PARAMETERS = [
 ]
 
 
-def fleet_host(region: dict) -> str:
-    return region.get("fleet_host", f"{region['name']}-Fleet-Summary")
+def fleet_host(name: str) -> str:
+    return region(name)["fleet_host"]
 
 
 def main():
     api = ZabbixAPI()
     api.login()
     hostids = {}
-    for region in REGIONS:
-        h = fleet_host(region)
+    for name in REGIONS:
+        h = fleet_host(name)
         hostids[h] = api.call("host.get", {"filter": {"host": [h]}})[0]["hostid"]
     carrier_id = hostids[CARRIER]
 
@@ -100,8 +97,8 @@ def main():
         print(f">> {CARRIER}: script item {KEY} created (itemid={r['itemids'][0]})")
 
     # other regions: zoom.bridge.run as a TRAPPER the collector pushes to
-    for region in REGIONS:
-        h = fleet_host(region)
+    for name in REGIONS:
+        h = fleet_host(name)
         if h == CARRIER:
             continue
         got = api.call("item.get", {"hostids": [hostids[h]], "filter": {"key_": [KEY]}})
@@ -116,8 +113,8 @@ def main():
                 "type": 2, "value_type": 4})
             print(f">> {h}: trapper {KEY} created (itemid={r['itemids'][0]})")
 
-    for region in REGIONS:
-        h = fleet_host(region)
+    for name in REGIONS:
+        h = fleet_host(name)
         desc = "Zoom collector stopped reporting"
         if not api.call("trigger.get", {"filter": {"description": [desc]},
                                         "hostids": [hostids[h]]}):
