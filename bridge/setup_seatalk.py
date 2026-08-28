@@ -47,11 +47,16 @@ BUILDING_SCOPES = {
                 "webhook_env": "SEATALK_WEBHOOK_URL_SG_RC"},
     "SG-5SPD": {"hostgroup": "Rooms/SG", "tags": {"building": "5SPD"},
                 "webhook_env": "SEATALK_WEBHOOK_URL_SG_5SPD"},
-    # BR buildings — FLP 44 rooms, B32 15; HYP 10 / FBSSP9 1 / SFB 1 and the
-    # fleet watchdog stay with the BR region scope.
+    # BR buildings — FLP 44 rooms keeps its own group. The B32 group also covers
+    # BR's small sites (HYP 10, FBSSP9 1, SFB 1), which have no group of their
+    # own, plus the BR collector watchdog: that trigger sits on BR-Fleet-Summary,
+    # which carries no building tag but does carry role=summary. Without that
+    # last condition a dead BR collector would alert nobody.
     "BR-FLP":  {"hostgroup": "Rooms/BR", "tags": {"building": "FLP"},
                 "webhook_env": "SEATALK_WEBHOOK_URL_BR_FLP"},
-    "BR-B32":  {"hostgroup": "Rooms/BR", "tags": {"building": "B32"},
+    "BR-B32":  {"hostgroup": "Rooms/BR",
+                "tags": {"building": ["B32", "HYP", "FBSSP9", "SFB"],
+                         "role": ["summary"]},
                 "webhook_env": "SEATALK_WEBHOOK_URL_BR_B32"},
 }
 SCOPES = {name: {"hostgroup": region(name)["host_group"], "tags": {},
@@ -190,9 +195,13 @@ def ensure_action(scope, cfg, mtid, uid, gid):
         {"conditiontype": 0, "operator": 0, "value": gid},                   # host group
         {"conditiontype": 4, "operator": 5, "value": MIN_SEVERITY},          # severity >=
     ]
-    # event tag value (26): value2 = tag name, value = tag value, operator 0 = equals
+    # event tag value (26): value2 = tag name, value = tag value, operator 0 = equals.
+    # A tag may carry a list — every type-26 condition is OR'd by evaltype 0
+    # (And/Or ORs conditions of the same type, ANDs across types), so a list of
+    # buildings means "any of these", and mixing tag names still ORs them.
     for tag, val in sorted(cfg["tags"].items()):
-        conditions.append({"conditiontype": 26, "operator": 0, "value": val, "value2": tag})
+        for v in ([val] if isinstance(val, str) else val):
+            conditions.append({"conditiontype": 26, "operator": 0, "value": v, "value2": tag})
     opmessage = {"default_msg": 1, "mediatypeid": mtid}
     body = {
         "name": name, "eventsource": 0, "status": 0, "esc_period": "1h",
