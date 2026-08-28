@@ -1,6 +1,6 @@
 # TODO / Roadmap
 
-Pending work as of 2026-08-28. Context: SG (140 rooms), CNGR (24) and BR (71)
+Pending work as of 2026-08-28. Context: SG (143 rooms), CNGR (24) and BR (71)
 live on company Zabbix/Grafana with SeaTalk alerting; location directory is the
 single source of truth for region membership, and `bridge/regions.py` is the one
 place a region is defined.
@@ -65,6 +65,12 @@ overlap by design (regional IT keeps the full view).
   ~40k LLD backlog, ~9s/call API latency → gateway 521s. Our dashboards were
   hardened (trends, small windows), but the server issue belongs to the CIT
   Zabbix admins — chase the ticket if slowness returns.
+- [ ] Stale SG host `SG-Forrest Li Home-Home-Home` (hostid 41153): no longer in
+  the SG directory subtree, so it never gets data again — permanently "offline"
+  on dashboards and possibly alerting. Its name also puts a named person's home
+  on helpdesk dashboards (`LOCATION_OVERRIDES` handles this for `SG-Office`).
+  Delete the host, or re-pin it if the room comes back. Provisioning never
+  deletes hosts, so this needs a manual call.
 - [ ] Local cleanup: `homebrew.mxcl.grafana` LaunchAgent (old local POC) still
   autostarts on the Mac; `brew services stop grafana` when no longer needed.
 - Known artifact: CNGR data gap 2026-08-14 ~12:00–15:30 (LOCATION_ROOT
@@ -73,7 +79,7 @@ overlap by design (regional IT keeps the full view).
 ## Remaining regions (room counts by directory node, 2026-08-14)
 
 CNDC 143, ID 77 + ID-BKE 20, CNCB 67, VN 61, PH 50 + PH-BLI 10, TH 34,
-MY 29, TW 20, MX 7, KR 5, IN 3 — plus live SG 140, BR 71, CNGR 24 ≈ 760 total.
+MY 29, TW 20, MX 7, KR 5, IN 3 — plus live SG 143, BR 71, CNGR 24 ≈ 760 total.
 
 ## Onboarding recipe (current, per region)
 

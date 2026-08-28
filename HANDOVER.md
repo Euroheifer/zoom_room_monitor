@@ -16,7 +16,7 @@ Zoom APIs ──(collector.js, script item INSIDE Zabbix, 5-min cycle)──► 
                        SeaTalk group alerts ◄──(webhook media types)────┘
 ```
 
-Live regions: **SG (140 rooms)**, **CNGR (24)** and **BR (71)** of ~760 in the
+Live regions: **SG (143 rooms)**, **CNGR (24)** and **BR (71)** of ~760 in the
 Zoom account. The **Zoom location directory is the single source of truth** for
 region membership — room naming conventions are NOT trusted (test/VIP rooms
 break them deliberately).
