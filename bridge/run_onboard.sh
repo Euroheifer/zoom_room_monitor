@@ -12,5 +12,5 @@ Next, by hand:
   1. Create the SeaTalk group + System Account webhook
   2. Add its URL to bridge/.env  (see regions.py for the var name)
   3. python3 setup_seatalk.py $1
-  4. Copy the fleet dashboard (until the \$region template lands)
+No dashboard step: the fleet dashboard picks the region up automatically.
 EOF

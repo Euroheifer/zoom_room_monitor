@@ -33,7 +33,7 @@ break them deliberately).
 | SeaTalk media type | `Seatalk-ZoomRooms` = **153**, shared by every scope; posts to the URL in `{ALERT.SENDTO}`, so the message format lives in ONE place (per-destination clones 151/152 deleted 2026-08-18) |
 | Trigger actions (one per scope) | CNGR **280**, SG **281**, SG-GLX **282**, SG-RC **283**, SG-5SPD **284** — host group + severity ≥ Average (+ `building` tag for building scopes), problem + recovery |
 | Alert identity | usergroup **88** `Zoom Rooms Alerts` (read on all `Rooms/*`); one user per scope: `svc-zoom-sg` **147**, `-cngr` **148**, `-sg-glx` **149**, `-sg-rc` **150**, `-sg-5spd` **151** — each holds exactly ONE media row whose `sendto` IS its group's webhook URL. One user per scope is mandatory: an action sends to ALL of a user's media rows of that type |
-| Grafana dashboards | company Grafana: fleet SG (`zoom-sg-poc`), fleet CNGR (`zoom-cngr-poc`), room detail (`zoom-room-detail`, region-agnostic) — import via `deploy/upload-to-grafana/` symlinks (UI upload, overwrite) |
+| Grafana dashboards | company Grafana: **fleet, all regions (`zoom-fleet`)** — `$region`/`$building`/`$floor`, per-region detail in a collapsed repeated row; room detail (`zoom-room-detail`, region-agnostic); superseded per-region copies `zoom-sg-poc` / `zoom-cngr-poc` kept until the fleet view is proven. Import via `deploy/upload-to-grafana/` symlinks (UI upload, overwrite) |
 
 Secrets live in `bridge/.env` (gitignored): `ZOOM_ACCOUNT_ID / ZOOM_CLIENT_ID /
 ZOOM_CLIENT_SECRET` (S2S OAuth), `ZBX_API_URL / ZBX_API_TOKEN` (super-admin),
@@ -157,6 +157,6 @@ user a `! cd ... && ...` one-liner.
 1. ~~Global device-rotation budget in collector.js~~ — done 2026-08-18.
 2. ~~Single region manifest + onboarding wrapper~~ — done 2026-08-28
    (`regions.py`, `run_onboard.sh`).
-3. Templated `$region` fleet dashboard.
+3. ~~Templated `$region` fleet dashboard~~ — done 2026-08-28 (`zoom-fleet`).
 4. Per-building SeaTalk scopes (design in TODO §2) — pilot SH-CaoHeJing once
    the user creates its SeaTalk group and provides the webhook.

@@ -5,7 +5,8 @@ current version). Grafana → Dashboards → New → Import → upload:
 
 | File | Dashboard |
 |---|---|
-| `grafana-dashboard.import.json` | Zoom Rooms — Singapore (fleet) |
+| `grafana-fleet.import.json` | **Zoom Rooms — Fleet** (all regions, `$region`/`$building`/`$floor`) |
+| `grafana-dashboard.import.json` | Zoom Rooms — Singapore (fleet, superseded by the above) |
 | `grafana-dashboard-cngr.import.json` | Zoom Rooms — CNGR (fleet) |
 | `grafana-room-detail.import.json` | Zoom Room — Detail (shared drill-down) |
 

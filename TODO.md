@@ -20,11 +20,16 @@ place a region is defined.
   region or an empty directory subtree fails loudly. `./run_onboard.sh <REGION>`
   chains provisioning + collector reinstall; SeaTalk and dashboards stay manual.
   Check: `python3 bridge/regions.py`.
-- [ ] **Templated fleet dashboard** — replace per-region dashboard copies with
-  one dashboard using a `$region` host-group variable (room-detail already
-  works this way). Removes the copy/swap/import step per region and the
-  N-times maintenance of every dashboard fix. Needs the building/floor
-  template-var regexes generalized (or switched to host tags).
+- [x] **Templated fleet dashboard** — DONE 2026-08-28:
+  `deploy/grafana-fleet.import.json` (uid `zoom-fleet`), `$region`/`$building`/
+  `$floor`. Always-visible section reads the per-region fleet-summary items
+  (cheap at any scope) plus a fleet-wide issues table that includes the
+  collector watchdogs; per-region detail lives in a collapsed row repeated by
+  `$region`, so no room-level query runs until you expand one. Host group
+  `Rooms/Singapore` was renamed `Rooms/SG` (groupid 507 kept) so `$region`
+  serves as both group and host-name prefix.
+  - [ ] Delete `zoom-sg-poc` / `zoom-cngr-poc` once the fleet dashboard has
+    been used for a few days; update the Confluence links then.
 
 ## 2. Per-building SeaTalk groups — DONE for SG (2026-08-18)
 
@@ -85,5 +90,5 @@ MY 29, TW 20, MX 7, KR 5, IN 3 — plus live SG 143, BR 71, CNGR 24 ≈ 760 tota
 
 See docs/SETUP.md "Setting up another country". Short form: verify the
 directory node → add `"XX": {}` to `bridge/regions.py` → `./run_onboard.sh XX`
-→ SeaTalk group/webhook in `.env` + `setup_seatalk.py XX` → dashboard copy
-(until the templated dashboard above lands).
+→ SeaTalk group/webhook in `.env` + `setup_seatalk.py XX`. No dashboard step —
+the fleet dashboard picks the region up from its host group.
