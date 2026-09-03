@@ -28,8 +28,16 @@ place a region is defined.
   `$region`, so no room-level query runs until you expand one. Host group
   `Rooms/Singapore` was renamed `Rooms/SG` (groupid 507 kept) so `$region`
   serves as both group and host-name prefix.
-  - [ ] Delete `zoom-sg-poc` / `zoom-cngr-poc` once the fleet dashboard has
+  - Split 2026-09-03 into `zoom-fleet` (HQ overview, no variables) +
+    `zoom-region` (one region at a time), because Grafana cannot hide panels
+    based on a variable value — an overview that stayed visible duplicated the
+    selected region's own panels. Two dashboards serve all 12+ regions.
+  - [ ] Delete `zoom-sg-poc` / `zoom-cngr-poc` once the two new dashboards have
     been used for a few days; update the Confluence links then.
+  - [ ] If per-region access ever has to be *enforced* (not just a landing
+    view), it needs a dashboard per region with the region hard-coded plus
+    per-folder view permissions — someone with folder-admin rights, and back to
+    N copies. Deliberately not done.
 
 ## 2. Per-building SeaTalk groups — DONE for SG (2026-08-18)
 
