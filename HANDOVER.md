@@ -16,7 +16,7 @@ Zoom APIs ──(collector.js, script item INSIDE Zabbix, 5-min cycle)──► 
                        SeaTalk group alerts ◄──(webhook media types)────┘
 ```
 
-Live regions: **SG (143 rooms)**, **CNGR (24)** and **BR (71)** of ~760 in the
+Live regions: **SG (143 rooms)**, **CNGR (24)**, **BR (71)** and **PH (49)** of ~760 in the
 Zoom account. The **Zoom location directory is the single source of truth** for
 region membership — room naming conventions are NOT trusted (test/VIP rooms
 break them deliberately).
@@ -26,9 +26,9 @@ break them deliberately).
 | Object | ID / name |
 |---|---|
 | Collector script item (carrier, ALL regions) | `zoom.bridge.run` itemid **6528238** on `SG-Fleet-Summary`, 300s, 60s timeout |
-| Non-carrier cycle-summary trappers | `zoom.bridge.run` — CNGR **6595415**, BR **6627736** (on their fleet hosts) |
+| Non-carrier cycle-summary trappers | `zoom.bridge.run` — CNGR **6595415**, BR **6627736**, PH **6688014** (on their fleet hosts) |
 | Watchdogs | `nodata(zoom.bridge.run,10m)` High trigger per fleet host |
-| Host groups | `Rooms/SG` = **507** (renamed from `Rooms/Singapore` 2026-08-28; groupid preserved, so actions/permissions followed), `Rooms/CNGR` = **512**, `Rooms/BR` = **513** |
+| Host groups | `Rooms/SG` = **507** (renamed from `Rooms/Singapore` 2026-08-28; groupid preserved, so actions/permissions followed), `Rooms/CNGR` = **512**, `Rooms/BR` = **513**, `Rooms/PH` = **516** |
 | Templates | room **40602**, devices **40603**, fleet **40604** |
 | SeaTalk media type | `Seatalk-ZoomRooms` = **153**, shared by every scope; posts to the URL in `{ALERT.SENDTO}`, so the message format lives in ONE place (per-destination clones 151/152 deleted 2026-08-18) |
 | Trigger actions (one per scope) | BR-B32 **286** (B32 + HYP/FBSSP9/SFB + `role=summary` watchdog, verified end-to-end 2026-08-28), CNGR **280**, SG **281**, SG-GLX **282**, SG-RC **283**, SG-5SPD **284**, plus BR-FLP / BR-B32 — host group + severity ≥ Average (+ tag conditions for building scopes), problem + recovery. A scope's tag values may be a LIST: every type-26 condition is OR'd by evaltype 0, which is how `BR-B32` covers B32 + HYP + FBSSP9 + SFB and, via `role=summary`, the BR collector watchdog |

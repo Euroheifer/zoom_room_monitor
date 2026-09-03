@@ -92,8 +92,15 @@ overlap by design (regional IT keeps the full view).
 
 ## Remaining regions (room counts by directory node, 2026-08-14)
 
-CNDC 143, ID 77 + ID-BKE 20, CNCB 67, VN 61, PH 50 + PH-BLI 10, TH 34,
-MY 29, TW 20, MX 7, KR 5, IN 3 — plus live SG 143, BR 71, CNGR 24 ≈ 760 total.
+CNDC 143, ID 77 + ID-BKE 20, CNCB 67, VN 61, TH 34, MY 29, TW 20, MX 7,
+KR 5, IN 3 — plus live SG 143, BR 71, PH 49, CNGR 24 ≈ 760 total.
+
+`PH-BLI` (10 rooms, Maribank, PDM 32F) is a **separate root-level country
+node**, so it did not come with PH. It also cannot use `PH-BLI` as its region
+code — the dash breaks the dashboard's `$building`/`$floor` regexes, which split
+host names on dashes. Onboard it as `"PHBLI": {"location_root": "PH-BLI"}`, or
+decide to fold its rooms into PH since it is the same physical tower. Same
+caveat applies to `ID-BKE` and `PH`-style sibling nodes.
 
 ## Onboarding recipe (current, per region)
 
