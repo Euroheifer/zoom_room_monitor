@@ -69,12 +69,14 @@ overlap by design (regional IT keeps the full view).
   ~40k LLD backlog, ~9s/call API latency → gateway 521s. Our dashboards were
   hardened (trends, small windows), but the server issue belongs to the CIT
   Zabbix admins — chase the ticket if slowness returns.
-- [ ] Stale SG host `SG-Forrest Li Home-Home-Home` (hostid 41153): no longer in
-  the SG directory subtree, so it never gets data again — permanently "offline"
-  on dashboards and possibly alerting. Its name also puts a named person's home
-  on helpdesk dashboards (`LOCATION_OVERRIDES` handles this for `SG-Office`).
-  Delete the host, or re-pin it if the room comes back. Provisioning never
-  deletes hosts, so this needs a manual call.
+- Known exception, leave in place: SG host **41153** `Home` (visible
+  `SG-Forrest Li Home-Home-Home`) is a VIP home room. It left the SG directory
+  subtree on 2026-08-14 and receives no data, so provisioning ignores it and its
+  two problems (High "Room is offline" + Medium) stay open permanently. **Do not
+  delete it.** Cost of keeping it: a permanent red tile in the SG room grid, two
+  permanent rows in Active issues, and a "Forrest Li Home" entry in the Building
+  filter. If that noise ever matters, disable the host in Zabbix (keeps history,
+  closes the problems, removes it from dashboards) rather than deleting it.
 - [ ] Local cleanup: `homebrew.mxcl.grafana` LaunchAgent (old local POC) still
   autostarts on the Mac; `brew services stop grafana` when no longer needed.
 - Known artifact: CNGR data gap 2026-08-14 ~12:00–15:30 (LOCATION_ROOT
