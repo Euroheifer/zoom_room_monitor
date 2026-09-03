@@ -9,6 +9,7 @@ REGIONS = {
     "CNGR": {"webhook_env": "SEATALK_WEBHOOK_URL",      # legacy unsuffixed var name
              "strip_campus_prefix": False},             # campus names carry the city (BJ-JinHui)
     "BR":   {},
+    "PH":   {},
 }
 
 
@@ -41,10 +42,14 @@ if __name__ == "__main__":  # must match what the 3 live regions run with today
         "region_prefix": "BR", "location_root": "BR", "host_group": "Rooms/BR",
         "fleet_host": "BR-Fleet-Summary", "webhook_env": "SEATALK_WEBHOOK_URL_BR",
         "strip_campus_prefix": True}
+    assert region("PH") == {
+        "region_prefix": "PH", "location_root": "PH", "host_group": "Rooms/PH",
+        "fleet_host": "PH-Fleet-Summary", "webhook_env": "SEATALK_WEBHOOK_URL_PH",
+        "strip_campus_prefix": True}
     try:
         region("XX")
     except SystemExit as e:
-        assert "known: SG CNGR BR" in str(e)
+        assert "known: SG CNGR BR PH" in str(e)
     else:
         raise AssertionError("unknown region must exit")
     print("ok")

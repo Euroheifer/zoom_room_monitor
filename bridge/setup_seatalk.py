@@ -54,6 +54,15 @@ BUILDING_SCOPES = {
     # last condition a dead BR collector would alert nobody.
     "BR-FLP":  {"hostgroup": "Rooms/BR", "tags": {"building": "FLP"},
                 "webhook_env": "SEATALK_WEBHOOK_URL_BR_FLP"},
+    # PH — PDM is the 39-room tower; the three small sites (SPXSOC8 6, 5CC 3,
+    # CPIP 1) share one group, which also carries the PH collector watchdog
+    # (role=summary) since those hosts have no building tag.
+    "PH-PDM":   {"hostgroup": "Rooms/PH", "tags": {"building": "PDM"},
+                 "webhook_env": "SEATALK_WEBHOOK_URL_PH_PDM"},
+    "PH-Sites": {"hostgroup": "Rooms/PH",
+                 "tags": {"building": ["SPXSOC8", "5CC", "CPIP"],
+                          "role": ["summary"]},
+                 "webhook_env": "SEATALK_WEBHOOK_URL_PH_SITES"},
     "BR-B32":  {"hostgroup": "Rooms/BR",
                 "tags": {"building": ["B32", "HYP", "FBSSP9", "SFB"],
                          "role": ["summary"]},
