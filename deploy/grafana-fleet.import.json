@@ -31,302 +31,6 @@
  "panels": [
   {
    "type": "stat",
-   "title": "Total rooms",
-   "datasource": {
-    "type": "alexanderzobnin-zabbix-datasource",
-    "uid": "${DS_ZABBIX}"
-   },
-   "gridPos": {
-    "h": 4,
-    "w": 6,
-    "x": 0,
-    "y": 0
-   },
-   "fieldConfig": {
-    "defaults": {
-     "color": {
-      "mode": "fixed",
-      "fixedColor": "text"
-     },
-     "decimals": 0
-    },
-    "overrides": []
-   },
-   "options": {
-    "colorMode": "value",
-    "graphMode": "area",
-    "justifyMode": "auto",
-    "orientation": "auto",
-    "textMode": "value",
-    "wideLayout": true,
-    "reduceOptions": {
-     "calcs": [
-      "lastNotNull"
-     ],
-     "fields": "",
-     "values": false
-    }
-   },
-   "targets": [
-    {
-     "application": {
-      "filter": ""
-     },
-     "datasource": {
-      "type": "alexanderzobnin-zabbix-datasource",
-      "uid": "${DS_ZABBIX}"
-     },
-     "functions": [
-      {
-       "def": {
-        "category": "Aggregate",
-        "name": "sumSeries",
-        "params": [],
-        "defaultParams": []
-       },
-       "params": [],
-       "text": "sumSeries()"
-      }
-     ],
-     "group": {
-      "filter": "/^Rooms\\/${region:regex}$/"
-     },
-     "host": {
-      "filter": "/Fleet Summary$/"
-     },
-     "item": {
-      "filter": "Fleet: total rooms"
-     },
-     "options": {},
-     "queryType": "0",
-     "refId": "A"
-    }
-   ]
-  },
-  {
-   "type": "stat",
-   "title": "Online",
-   "datasource": {
-    "type": "alexanderzobnin-zabbix-datasource",
-    "uid": "${DS_ZABBIX}"
-   },
-   "gridPos": {
-    "h": 4,
-    "w": 6,
-    "x": 6,
-    "y": 0
-   },
-   "fieldConfig": {
-    "defaults": {
-     "color": {
-      "mode": "fixed",
-      "fixedColor": "green"
-     },
-     "decimals": 0
-    },
-    "overrides": []
-   },
-   "options": {
-    "colorMode": "value",
-    "graphMode": "area",
-    "justifyMode": "auto",
-    "orientation": "auto",
-    "textMode": "value",
-    "wideLayout": true,
-    "reduceOptions": {
-     "calcs": [
-      "lastNotNull"
-     ],
-     "fields": "",
-     "values": false
-    }
-   },
-   "targets": [
-    {
-     "application": {
-      "filter": ""
-     },
-     "datasource": {
-      "type": "alexanderzobnin-zabbix-datasource",
-      "uid": "${DS_ZABBIX}"
-     },
-     "functions": [
-      {
-       "def": {
-        "category": "Aggregate",
-        "name": "sumSeries",
-        "params": [],
-        "defaultParams": []
-       },
-       "params": [],
-       "text": "sumSeries()"
-      }
-     ],
-     "group": {
-      "filter": "/^Rooms\\/${region:regex}$/"
-     },
-     "host": {
-      "filter": "/Fleet Summary$/"
-     },
-     "item": {
-      "filter": "Fleet: rooms online"
-     },
-     "options": {},
-     "queryType": "0",
-     "refId": "A"
-    }
-   ]
-  },
-  {
-   "type": "stat",
-   "title": "Offline",
-   "datasource": {
-    "type": "alexanderzobnin-zabbix-datasource",
-    "uid": "${DS_ZABBIX}"
-   },
-   "gridPos": {
-    "h": 4,
-    "w": 6,
-    "x": 12,
-    "y": 0
-   },
-   "fieldConfig": {
-    "defaults": {
-     "color": {
-      "mode": "fixed",
-      "fixedColor": "red"
-     },
-     "decimals": 0
-    },
-    "overrides": []
-   },
-   "options": {
-    "colorMode": "value",
-    "graphMode": "area",
-    "justifyMode": "auto",
-    "orientation": "auto",
-    "textMode": "value",
-    "wideLayout": true,
-    "reduceOptions": {
-     "calcs": [
-      "lastNotNull"
-     ],
-     "fields": "",
-     "values": false
-    }
-   },
-   "targets": [
-    {
-     "application": {
-      "filter": ""
-     },
-     "datasource": {
-      "type": "alexanderzobnin-zabbix-datasource",
-      "uid": "${DS_ZABBIX}"
-     },
-     "functions": [
-      {
-       "def": {
-        "category": "Aggregate",
-        "name": "sumSeries",
-        "params": [],
-        "defaultParams": []
-       },
-       "params": [],
-       "text": "sumSeries()"
-      }
-     ],
-     "group": {
-      "filter": "/^Rooms\\/${region:regex}$/"
-     },
-     "host": {
-      "filter": "/Fleet Summary$/"
-     },
-     "item": {
-      "filter": "Fleet: rooms offline"
-     },
-     "options": {},
-     "queryType": "0",
-     "refId": "A"
-    }
-   ]
-  },
-  {
-   "type": "stat",
-   "title": "In meeting",
-   "datasource": {
-    "type": "alexanderzobnin-zabbix-datasource",
-    "uid": "${DS_ZABBIX}"
-   },
-   "gridPos": {
-    "h": 4,
-    "w": 6,
-    "x": 18,
-    "y": 0
-   },
-   "fieldConfig": {
-    "defaults": {
-     "color": {
-      "mode": "fixed",
-      "fixedColor": "blue"
-     },
-     "decimals": 0
-    },
-    "overrides": []
-   },
-   "options": {
-    "colorMode": "value",
-    "graphMode": "area",
-    "justifyMode": "auto",
-    "orientation": "auto",
-    "textMode": "value",
-    "wideLayout": true,
-    "reduceOptions": {
-     "calcs": [
-      "lastNotNull"
-     ],
-     "fields": "",
-     "values": false
-    }
-   },
-   "targets": [
-    {
-     "application": {
-      "filter": ""
-     },
-     "datasource": {
-      "type": "alexanderzobnin-zabbix-datasource",
-      "uid": "${DS_ZABBIX}"
-     },
-     "functions": [
-      {
-       "def": {
-        "category": "Aggregate",
-        "name": "sumSeries",
-        "params": [],
-        "defaultParams": []
-       },
-       "params": [],
-       "text": "sumSeries()"
-      }
-     ],
-     "group": {
-      "filter": "/^Rooms\\/${region:regex}$/"
-     },
-     "host": {
-      "filter": "/Fleet Summary$/"
-     },
-     "item": {
-      "filter": "Fleet: rooms in meeting"
-     },
-     "options": {},
-     "queryType": "0",
-     "refId": "A"
-    }
-   ]
-  },
-  {
-   "type": "stat",
    "title": "Offline rooms by region",
    "datasource": {
     "type": "alexanderzobnin-zabbix-datasource",
@@ -336,7 +40,7 @@
     "h": 5,
     "w": 24,
     "x": 0,
-    "y": 4
+    "y": 0
    },
    "description": "One tile per region, straight off its fleet-summary item. Pick a region below to drill into its rooms.",
    "fieldConfig": {
@@ -419,7 +123,7 @@
     "h": 10,
     "w": 24,
     "x": 0,
-    "y": 9
+    "y": 5
    },
    "id": 6,
    "title": "Active issues \u2014 all selected regions (includes collector watchdogs)",
@@ -642,7 +346,7 @@
     "h": 1,
     "w": 24,
     "x": 0,
-    "y": 19
+    "y": 15
    },
    "panels": [
     {
@@ -1165,7 +869,6 @@
        "color": {
         "mode": "thresholds"
        },
-       "displayName": "${__field.labels.host}",
        "mappings": [
         {
          "options": {
@@ -1254,7 +957,16 @@
      "title": "Room status grid (red = offline)",
      "type": "stat",
      "timeFrom": "15m",
-     "hideTimeOverride": true
+     "hideTimeOverride": true,
+     "transformations": [
+      {
+       "id": "renameByRegex",
+       "options": {
+        "regex": "^[^-]+-[^-]+-[^-]+-(.*?)(?:: Room online.*)?$",
+        "renamePattern": "$1"
+       }
+      }
+     ]
     },
     {
      "datasource": {
@@ -1727,19 +1439,15 @@
      "group": "/^Rooms\\/.+/"
     },
     "regex": "/^Rooms\\/(?<value>.+)$/",
-    "multi": true,
+    "multi": false,
     "includeAll": true,
     "allValue": ".*",
     "refresh": 1,
     "sort": 1,
     "current": {
      "selected": true,
-     "text": [
-      "All"
-     ],
-     "value": [
-      "$__all"
-     ]
+     "text": "All",
+     "value": "$__all"
     },
     "options": []
    },
@@ -1760,19 +1468,15 @@
      "item": ""
     },
     "regex": "/^[^-]+-(?<value>[^-]+)-[^-]+-/",
-    "multi": true,
+    "multi": false,
     "includeAll": true,
     "allValue": ".*",
     "refresh": 1,
     "sort": 1,
     "current": {
      "selected": true,
-     "text": [
-      "All"
-     ],
-     "value": [
-      "$__all"
-     ]
+     "text": "All",
+     "value": "$__all"
     },
     "options": []
    },
