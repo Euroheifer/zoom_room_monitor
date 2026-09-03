@@ -642,7 +642,7 @@
     {
      "id": "renameByRegex",
      "options": {
-      "regex": "^[^-]+-[^-]+-[^-]+-(.*?)(?:: Room online.*)?$",
+      "regex": "^[^-]+-[^-]+-(.*?)(?:: Room online.*)?$",
       "renamePattern": "$1"
      }
     }
