@@ -59,7 +59,7 @@ BUILDING_SCOPES = {
     # (role=summary) since those hosts have no building tag.
     "PH-PDM":   {"hostgroup": "Rooms/PH", "tags": {"building": "PDM"},
                  "webhook_env": "SEATALK_WEBHOOK_URL_PH_PDM"},
-    "PH-Sites": {"hostgroup": "Rooms/PH",
+    "PH-SITES": {"hostgroup": "Rooms/PH",
                  "tags": {"building": ["SPXSOC8", "5CC", "CPIP"],
                           "role": ["summary"]},
                  "webhook_env": "SEATALK_WEBHOOK_URL_PH_SITES"},
@@ -233,7 +233,9 @@ def ensure_action(scope, cfg, mtid, uid, gid):
 
 
 def main():
-    asked = [a.upper() for a in sys.argv[1:]]
+    # match scope names case-insensitively; don't assume the keys are upper-case
+    by_upper = {k.upper(): k for k in SCOPES}
+    asked = [by_upper.get(a.upper(), a) for a in sys.argv[1:]]
     unknown = [a for a in asked if a not in SCOPES]
     if unknown:
         sys.exit(f"unknown scope(s): {unknown}. Known: {sorted(SCOPES)}")
