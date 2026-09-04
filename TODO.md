@@ -66,6 +66,10 @@ overlap by design (regional IT keeps the full view).
 
 ## 3. Watch items / small stuff
 
+- PH went live 2026-09-04 (49 rooms, group 516, actions PH-PDM 291 /
+  PH-SITES 292, both webhooks in `.env`). Its 20 problems from provisioning
+  day will never alert — they predate the actions. Nothing to fix.
+
 - [ ] SG's newly monitored unconventional rooms (`ECS test 2026`, `Home`,
   `L16 Cafe test`) and the flapping Corp IT Test Rooms: if they spam the SG
   SeaTalk group, mark them **Under Construction** in Zoom admin — alert

@@ -31,15 +31,15 @@ break them deliberately).
 | Host groups | `Rooms/SG` = **507** (renamed from `Rooms/Singapore` 2026-08-28; groupid preserved, so actions/permissions followed), `Rooms/CNGR` = **512**, `Rooms/BR` = **513**, `Rooms/PH` = **516** |
 | Templates | room **40602**, devices **40603**, fleet **40604** |
 | SeaTalk media type | `Seatalk-ZoomRooms` = **153**, shared by every scope; posts to the URL in `{ALERT.SENDTO}`, so the message format lives in ONE place (per-destination clones 151/152 deleted 2026-08-18) |
-| Trigger actions (one per scope) | BR-B32 **286** (B32 + HYP/FBSSP9/SFB + `role=summary` watchdog, verified end-to-end 2026-08-28), CNGR **280**, SG **281**, SG-GLX **282**, SG-RC **283**, SG-5SPD **284**, plus BR-FLP / BR-B32 — host group + severity ≥ Average (+ tag conditions for building scopes), problem + recovery. A scope's tag values may be a LIST: every type-26 condition is OR'd by evaltype 0, which is how `BR-B32` covers B32 + HYP + FBSSP9 + SFB and, via `role=summary`, the BR collector watchdog |
-| Alert identity | usergroup **88** `Zoom Rooms Alerts` (read on all `Rooms/*`); one user per scope: `svc-zoom-sg` **147**, `-cngr` **148**, `-sg-glx` **149**, `-sg-rc` **150**, `-sg-5spd` **151** — each holds exactly ONE media row whose `sendto` IS its group's webhook URL. One user per scope is mandatory: an action sends to ALL of a user's media rows of that type |
+| Trigger actions (one per scope) | BR-B32 **286** (B32 + HYP/FBSSP9/SFB + `role=summary` watchdog, verified end-to-end 2026-08-28), CNGR **280**, SG **281**, SG-GLX **282**, SG-RC **283**, SG-5SPD **284**, plus BR-FLP / BR-B32, PH-PDM **291**, PH-SITES **292** (verified end-to-end 2026-09-04) — host group + severity ≥ Average (+ tag conditions for building scopes), problem + recovery. A scope's tag values may be a LIST: every type-26 condition is OR'd by evaltype 0, which is how `BR-B32` covers B32 + HYP + FBSSP9 + SFB and, via `role=summary`, the BR collector watchdog |
+| Alert identity | usergroup **88** `Zoom Rooms Alerts` (read on all `Rooms/*`); one user per scope: `svc-zoom-sg` **147**, `-cngr` **148**, `-sg-glx` **149**, `-sg-rc` **150**, `-sg-5spd` **151**, `-ph-pdm` **154**, `-ph-sites` **155** — each holds exactly ONE media row whose `sendto` IS its group's webhook URL. One user per scope is mandatory: an action sends to ALL of a user's media rows of that type |
 | Grafana dashboards | company Grafana, three dashboards: **`zoom-fleet`** (Fleet Overview — HQ/global; totals + offline-by-region tiles linking through + all-region issues incl. collector watchdogs; no variables), **`zoom-region`** (one region at a time — `$region` single-select without All, `$building` single, `$floor` multi; the 7 operational panels; share as `/d/zoom-region?var-region=BR` with a local team — note this is a landing view, NOT access control: variables are URL-editable and the datasource sees every region), **`zoom-room-detail`** (per-room drill-down, region-agnostic). The room grid strips the `REGION-building-` prefix via `renameByRegex`, keeping `floor-room` (room numbers repeat across floors) for readability; its drill-down uses `${__field.labels.host}`, unaffected by the rename. Superseded per-region copies `zoom-sg-poc` / `zoom-cngr-poc` still exist. Import via `deploy/upload-to-grafana/` symlinks (UI upload, overwrite) |
 
 Secrets live in `bridge/.env` (gitignored): `ZOOM_ACCOUNT_ID / ZOOM_CLIENT_ID /
 ZOOM_CLIENT_SECRET` (S2S OAuth), `ZBX_API_URL / ZBX_API_TOKEN` (super-admin),
 `ZBX_SSL_VERIFY=false` (self-signed cert), `SEATALK_WEBHOOK_URL` (CNGR),
 `SEATALK_WEBHOOK_URL_SG`, `SEATALK_WEBHOOK_URL_SG_GLX`, `..._SG_RC`,
-`..._SG_5SPD`. SeaTalk webhook URLs are post-to-group credentials —
+`..._SG_5SPD`, `..._BR_FLP`, `..._BR_B32`, `..._PH_PDM`, `..._PH_SITES`. SeaTalk webhook URLs are post-to-group credentials —
 never commit or publish them.
 
 ## How the pieces work
@@ -108,6 +108,15 @@ user a `! cd ... && ...` one-liner.
 | Alert format change | edit `MT_SCRIPT`/`MT_TEMPLATES` in `setup_seatalk.py` and re-run (converges media type 153 — one place, all scopes); preview by POSTing to a webhook directly |
 
 ## Gotchas (each cost us a debugging session)
+
+0. **A freshly onboarded region alerts about nothing at first, and that is
+   correct.** Provisioning puts every already-broken room into a problem state
+   immediately; if the SeaTalk actions are created afterwards, none of those
+   problems ever alert (Zabbix only acts on events raised *after* an action
+   exists) and they produce no recovery messages either. PH went live with 20
+   open problems and zero alerts. Prove routing with a forced test alert
+   instead of waiting for chat traffic, and expect the backlog to stay silent
+   until each problem clears and recurs.
 
 1. **Gateway 521s**: the gateway in front of zabbix.cit.insea.io serves an
    HTML "521 Web server is down" page when the API takes ≳10s. During the
