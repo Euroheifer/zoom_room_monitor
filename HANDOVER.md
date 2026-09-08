@@ -130,10 +130,17 @@ user a `! cd ... && ...` one-liner.
    region config lives ONLY in `bridge/regions.py`, scripts take the region as
    an argument, and the name-prefix fallback in `select_rooms` is deleted — an
    unknown region or an empty subtree now fails instead of guessing.
-3. **Confluence quirks** (confluence.garenanow.com): rejects 4-byte emoji in
-   page bodies (write `(red circle)` etc.); the MCP page-update endpoint
-   fails against this server — **delete + recreate** is the workaround (page
-   ID/URL changes; update links + memory). Literal `<placeholders>` in prose
+3. **Confluence** (confluence.garenanow.com): rejects 4-byte emoji in page
+   bodies (write `(red circle)` etc.). The MCP page-update tool fails against
+   this server, but the **raw REST API updates in place fine** — GET
+   `/rest/api/content/<id>?expand=version,space,body.storage`, then PUT the
+   same id with `version.number + 1` and `body.storage.representation =
+   "storage"`, Bearer-authenticated with the personal token. Page IDs and URLs
+   survive, so the old delete-and-recreate workaround is no longer needed.
+   Code blocks: use the `code` macro with a CDATA body — no escaping traps.
+   The Confluence MCP itself runs in podman (`ghcr.io/sooperset/mcp-atlassian`),
+   so it fails with `-32000` whenever the podman VM is down: fix with
+   `podman machine start`, not by touching the token. Literal `<placeholders>` in prose
    break the markdown→XHTML conversion — backtick them.
 4. **SG-Fleet-Summary reinstalls overwrite macros** with `.env` values — fine
    today (one Zoom account), but revisit if a region ever gets its own creds.
