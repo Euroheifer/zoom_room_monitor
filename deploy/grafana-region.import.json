@@ -1142,15 +1142,19 @@
      "item": ""
     },
     "regex": "/^[^-]+-(?<value>[^-]+)-[^-]+-/",
-    "multi": false,
+    "multi": true,
     "includeAll": true,
     "allValue": ".*",
     "refresh": 1,
     "sort": 1,
     "current": {
      "selected": true,
-     "text": "All",
-     "value": "$__all"
+     "text": [
+      "All"
+     ],
+     "value": [
+      "$__all"
+     ]
     },
     "options": []
    },
@@ -1165,7 +1169,7 @@
     "query": {
      "queryType": "host",
      "group": "/^Rooms\\/${region:regex}$/",
-     "host": "/.*/",
+     "host": "/^[^-]+-${building:regex}-/",
      "application": "",
      "itemTag": "",
      "item": ""
